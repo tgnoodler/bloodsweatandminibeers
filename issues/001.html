@@ -59,6 +59,26 @@ input,textarea{width:100%;background:var(--deep);border:1px solid var(--edge);co
 #pdfstatus{position:fixed;right:14px;bottom:60px;z-index:50;font-family:Verdana,sans-serif;font-size:10px;color:var(--ice);display:none}
 .exporting .noexport{display:none !important}
 .exporting .bub{display:none !important}
+</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Limelight&display=swap"><style>
+:root{--deep:#07301a;--felt:#0d5a30;--rail:#d4af37;--chalk:#f7f1e1;--dim:#a9c4ad;--hot:#c8102e;--cool:#d4af37;--edge:#1c6e3c;--ice:#f7f1e1}
+body{background:#07301a;background-image:radial-gradient(1200px 600px at 50% -100px,#12723c,#07301a 70%),repeating-linear-gradient(45deg,#ffffff06 0 2px,#0000 2px 14px),repeating-linear-gradient(-45deg,#ffffff06 0 2px,#0000 2px 14px)}
+.wrap{padding-top:28px}
+.label{background:#0a0a0a;border:3px double var(--rail);border-radius:14px;box-shadow:0 0 0 6px #0a0a0a,0 0 0 8px var(--rail),0 0 40px #d4af3766,0 20px 50px #000c;position:relative;padding:34px 18px 26px}
+.label:before{content:"";position:absolute;inset:8px;border-radius:9px;background-image:radial-gradient(circle,#ffe9a3 0 2.2px,#0000 3px);background-size:22px 22px;background-position:0 0;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:6px;pointer-events:none;animation:bulbs 1.2s steps(2) infinite}
+@keyframes bulbs{0%{opacity:1}50%{opacity:.55}100%{opacity:1}}
+.label h1{font-family:"Limelight","Fraunces",Georgia,serif;font-weight:normal;font-size:40px;color:var(--rail);text-shadow:0 0 18px #d4af3799,0 2px 0 #7a5a10;letter-spacing:.02em}
+.label .crest{color:#ffe9a3;letter-spacing:.34em}.label .sub{color:#e6d7a8;font-style:italic}
+.badge{background:var(--hot);color:#fff;border:2px dashed #ffe9a3;box-shadow:0 0 0 3px var(--hot)}
+.eyebrow{color:var(--rail);border-bottom:1px solid #d4af3766;padding-bottom:3px}
+.rule span{font-size:14px;color:var(--rail);opacity:1}.rule span:before{content:"\2660 \2665 \2666 \2663";color:var(--rail);letter-spacing:.3em}.rule span{font-size:0}.rule span:before{font-size:13px}
+.cap-div span{background:radial-gradient(circle at 50% 20%,#c8102e,#7a0a1c);border:2px dashed var(--rail);box-shadow:0 0 0 3px #0a0a0a,0 0 0 5px var(--rail),0 6px 16px #000a;color:#fff}
+.btn{background:var(--rail);color:#0a0a0a;border-color:var(--rail)}
+.stake,.dossier,.callout,.trade,.vote{border-color:#d4af3755;background:#0a2c17aa}
+.chip{background:#0a0a0a;border:2px dashed var(--rail);color:var(--rail)}
+.bar i,.bars i{background:var(--rail)}
+.alert{border-color:var(--hot)}
+table th{color:var(--rail)}td{border-bottom-color:#1c6e3c}
+.mono{color:#ffe9a3}
 </style></head><body>
 
 <div class="wrap" id="doc">
@@ -240,26 +260,7 @@ input,textarea{width:100%;background:var(--deep);border:1px solid var(--edge);co
 <div class="eyebrow">The Trade Desk: Deals Waiting To Happen</div>
 <div class="trade"><div class="b sm rail">Ty and PJ: The Obvious One</div><div class="tiny">Ty's WR surplus (Higgins or Odunze) for PJ's third RB (Chase Brown or Jeanty). Ty buys a ceiling; PJ escapes the WR desert. Both grades jump a letter if this happens before Week 4.</div></div><div class="trade"><div class="b sm rail">Tanner and Brad: The Break-Glass Plan</div><div class="tiny">If CMC wobbles, Brad has RB floor pieces (Montgomery, Walker) and desperately needs ceiling. JSN is the break-glass asset, not the plan.</div></div><div class="trade"><div class="b sm rail">Ethan and John T: The QB Arbitrage</div><div class="tiny">Ethan starts a $6 Daniels; John T paid $33 for Allen. If John T ever needs a WR, Ethan should ask for the moon and settle for a planet.</div></div>
 
-<div class="rule"><span>🧊</span></div>
-<div class="noexport">
-<div style="display:flex;align-items:center;gap:10px">
-<div class="eyebrow" style="margin:0">The Weekly Desk</div>
-<button class="btn" style="margin-left:auto" onclick="toggleComposer()">+ File a weekly issue</button>
-</div>
-<p class="tiny dim">Commissioner desk: file each week's results here and they publish as new issues below, visible to everyone with the link. (Shared storage, so anyone viewing can technically post. Honor system, like the Ice rule.)</p>
-<div id="composer" style="display:none;border:1px solid #BFD9E566;border-radius:8px;padding:10px;margin-top:8px">
-<div style="display:grid;grid-template-columns:1fr 2fr;gap:8px">
-<input id="wk" placeholder="Week #"><input id="headline" placeholder="Headline (e.g., TY STARTS A GUY ON BYE)"></div>
-<textarea id="recap" style="margin-top:8px;min-height:70px" placeholder="Recap: scores, top score, lowest score, notable starts/sits…"></textarea>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-<input id="icelog" placeholder="Ice log (who owes a Smirnoff and why)"><input id="caddy" placeholder="Current caddy-race leader (last place)"></div>
-<div id="wstatus" class="tiny hot" style="margin-top:6px"></div>
-<div style="display:flex;gap:8px;margin-top:8px">
-<button class="btn" onclick="publishIssue()">Publish issue</button>
-<button class="btn ghost" onclick="resetIssues()">Reset all issues</button></div>
-</div>
-</div>
-<div id="archive"><p class="tiny dim" style="border:1px dashed var(--edge);border-radius:8px;padding:10px;font-style:italic">Loading the archive…</p></div>
+
 
 <div class="rule"><span>🧊</span></div>
 <p class="tiny dim"><b>Colophon &amp; honesty note:</b> Draft grades, ceiling/floor scores, and odds are the newsletter's own estimates built from the actual auction prices against a July 2026 consensus $200 PPR board, not sourced projections. Golf results, vote outcomes, casino events, and the Ice Report are as reported from the weekend. Extra uncertainty flagged on Nabers (post-ACL) and the 2026 rookie class. Owner names mapped to Sleeper draft order by Tanner.</p>
