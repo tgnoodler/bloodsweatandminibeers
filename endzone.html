@@ -16,10 +16,20 @@ header.top .sub{font-size:11px;letter-spacing:.18em;text-transform:uppercase;col
 @keyframes throb{0%,100%{box-shadow:0 0 0 0 #d50a0a88}50%{box-shadow:0 0 0 9px #d50a0a00}}
 h2{font-family:"Archivo",sans-serif;font-size:19px;letter-spacing:.14em;text-transform:uppercase;margin:28px 0 10px;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px}h2:before{content:"";width:6px;height:18px;background:var(--red);border-radius:2px}h2:after{content:"";flex:1;height:1px;background:var(--line)}
 h2 small{font-family:"Archivo",sans-serif;font-size:11px;letter-spacing:.1em;color:var(--ink2);font-weight:600}
-.rz{margin-top:16px;background:linear-gradient(180deg,#2a0606,#170303);border:2px solid var(--red);border-radius:12px;padding:10px 12px 12px;box-shadow:0 0 0 4px #d50a0a22,0 10px 30px #d50a0a33}
-.rzh{font-family:"Archivo",sans-serif;font-size:22px;font-weight:800;letter-spacing:.2em;color:#fff}
-.rzg{margin-top:8px;padding-top:8px;border-top:1px solid #d50a0a55}.rzt{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#ffb3b3;display:flex;align-items:center;gap:8px}.rzt img{width:22px;height:22px}
-.rzw{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.rzp{display:flex;align-items:center;gap:8px;background:#0c0c0e;border:1px solid #d50a0a66;border-radius:20px;padding:4px 12px 4px 4px;font-size:12px}.rzp img{width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:top;background:#fff}.rzp b{font-weight:800}.rzp i{font-style:normal;color:var(--ink2)}.rzp.none{padding:6px 12px;color:var(--ink2)}
+.rz{margin-top:16px;background:linear-gradient(180deg,#2a0606,#170303);border:2px solid var(--red);border-radius:14px;padding:10px 12px 12px;box-shadow:0 0 0 4px #d50a0a22,0 10px 30px #d50a0a33;animation:siren 1.6s ease-in-out infinite}
+@keyframes siren{0%,100%{box-shadow:0 0 0 4px #d50a0a22,0 10px 30px #d50a0a33}50%{box-shadow:0 0 0 6px #d50a0a55,0 10px 44px #d50a0a88}}
+.rzh{font-family:"Archivo",sans-serif;font-size:24px;font-weight:900;letter-spacing:.18em;color:#fff;display:flex;align-items:center;gap:10px}.rzh small{font-size:11px;letter-spacing:.1em;color:#ffb3b3;font-weight:700;margin-left:auto;text-transform:uppercase}
+.rzg{margin-top:10px;padding-top:10px;border-top:1px solid #d50a0a55}
+.rzt{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#ffb3b3;display:flex;align-items:center;gap:10px;margin-bottom:8px}.rzt img{width:22px;height:22px}.rzt .dd{color:#fff;background:#D50A0A;border-radius:4px;padding:1px 7px}.rzt .yl{margin-left:auto;color:#F2C14E}
+.turf{position:relative;border-radius:8px;overflow:hidden;background:repeating-linear-gradient(90deg,#1f6b2e 0 8.66%,#1a5c27 8.66% 17.33%);border:1px solid #ffffff22;box-shadow:inset 0 0 40px #0008}
+.turf svg{display:block;width:100%;height:120px}
+.turf .ball{position:absolute;top:50%;width:38px;height:38px;transform:translate(-50%,-50%);filter:drop-shadow(0 2px 6px #000c);animation:bob 1.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.12)}}
+.paint{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.rzf{display:flex;align-items:center;gap:7px;background:#0c0c0e;border:1px solid #d50a0a66;border-radius:20px;padding:3px 12px 3px 3px;font-size:12px;animation:rise .5s both;animation-delay:calc(var(--i) * .08s)}
+.rzf img{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:top;background:#fff}.rzf b{font-weight:800}.rzf i{font-style:normal;color:var(--ink2)}
+.paint .none{padding:6px 12px;color:var(--ink2);font-size:12px}
+@media(prefers-reduced-motion:reduce){.rz{animation:none}.turf .ball{animation:none}}
 .board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
 .tile{position:relative;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:10px 8px 8px;text-align:center;overflow:hidden;box-shadow:0 8px 20px #00000088;animation:rise .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(120ms + var(--i) * 70ms);cursor:pointer}
 .tile.on{border-color:var(--red);box-shadow:0 0 0 2px #d50a0a55,0 8px 20px #00000088}
@@ -89,7 +99,7 @@ table.case td b{display:block;font-family:"Archivo",sans-serif;font-size:20px;fo
 </style>
 <div class="wrap">
 <header class="top"><h1><span>THE</span>END ZONE</h1>
-<div class="sub">Blood, Sweat &amp; Mini Beers &middot; Week 3 &middot; Wednesday 7:02 PM &middot; every touchdown by a league starter</div><div class="bar"></div></header>
+<div class="sub">Blood, Sweat &amp; Mini Beers &middot; Week 3 &middot; Wednesday 7:03 PM &middot; every touchdown by a league starter</div><div class="bar"></div></header>
 <div class="off"><div class="big">Week 3 is in the books</div></div><div class="nextw"><div class="nl">Next kickoff</div><div class="nb">THURSDAY NIGHT &middot; 7:15 PM CDT</div><div class="count" data-on="1790900100000"><span><b>--</b><i>days</i></span><span><b>--</b><i>hrs</i></span><span><b>--</b><i>min</i></span><span><b>--</b><i>sec</i></span></div></div>
 
 <h2>The board <small>61 this week &middot; 201 this season</small></h2>
