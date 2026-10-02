@@ -104,15 +104,16 @@ table.case td b{display:block;font-family:"Archivo",sans-serif;font-size:20px;fo
 @media(max-width:520px){h2{flex-wrap:wrap;row-gap:2px;font-size:17px}h2 small{flex-basis:100%;font-size:10px}.nextw .nb{font-size:18px}header.top h1{font-size:38px}.board{grid-template-columns:repeat(3,1fr);gap:7px}.tile .face{width:46px;height:46px}.tile .n{font-size:34px}.tile .nm{font-size:11px}
 .tros{grid-template-columns:repeat(2,1fr);gap:8px}.tro{padding:12px 8px 12px}.tro img{width:54px;height:54px}.tro b{font-size:20px}.tro .stamp{font-size:24px}
 .tk{grid-template-columns:40px 40px 1fr;gap:8px;padding:8px}.tk .td{width:40px;height:40px}.tk .td b{font-size:14px}.tk .td em{font-size:12px}.tk .ph{width:40px;height:40px}.tk .nm{font-size:15px}.tk .bug{grid-column:1/-1;justify-self:start;min-width:0}table.ledger{font-size:11px}table.ledger td,table.ledger th{padding:6px 3px}table.case td i{display:none}.count span{min-width:0;flex:1}.count b{font-size:26px}.dst{grid-template-columns:repeat(2,1fr)}.dr .dg{display:none}}
-@media(prefers-reduced-motion:reduce){.crawl .cl-run{animation:none}.tile{animation:none}
-.tile.onfield{border-color:var(--red);animation:aura 2.4s ease-in-out infinite!important}
+.tile.onfield{border-color:var(--red);opacity:1;animation:aura 2.4s ease-in-out infinite!important}
 @keyframes aura{0%,100%{box-shadow:0 0 0 1px #d50a0a,0 0 14px #d50a0a77,0 8px 20px #00000088}50%{box-shadow:0 0 0 2px #ff2a2a,0 0 30px #d50a0acc,0 8px 20px #00000088}}
 .tile.idle{opacity:.35;filter:grayscale(.8);transition:opacity .3s}.tile.idle:hover{opacity:.8}
 @media(prefers-reduced-motion:reduce){.tile.onfield{animation:none!important;box-shadow:0 0 0 2px #d50a0a,0 0 22px #d50a0aaa}}.beacon{animation:none}.tro .stamp{animation:none}}
+.tile.onfield.zero .face{filter:none}.tile.onfield.zero .n{opacity:.9}
+@media(prefers-reduced-motion:reduce){.crawl .cl-run{animation:none}.tile{animation:none}
 </style>
 <div class="wrap">
 <header class="top"><h1><span>THE</span>END ZONE</h1>
-<div class="sub">Blood, Sweat &amp; Mini Beers &middot; Week 4 &middot; Thursday 7:42 PM &middot; every touchdown by a league starter</div><div class="bar"></div></header>
+<div class="sub">Blood, Sweat &amp; Mini Beers &middot; Week 4 &middot; Thursday 7:44 PM &middot; every touchdown by a league starter</div><div class="bar"></div></header>
 <div class="status live"><span class="beacon"></span>LIVE &middot; 1 game in progress &middot; 0 touchdowns so far</div>
 
 
