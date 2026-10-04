@@ -63,6 +63,29 @@ h3{font-family:"Graduate",serif;font-weight:400;font-size:20px;text-transform:up
 .pol .pc{text-align:center;padding-top:5px;line-height:1.1}.pol .pc b{display:block;font-size:12px}.pol .pc span{display:block;font-size:10px;color:#6d675a}
 .none{color:#d9caa8;font-size:13px}
 .links{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:30px}.links a{text-align:center;padding:10px 4px;border:2px solid #e8dcc0;color:#f3ead6;text-decoration:none;font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+/* the scouting file under the card */
+.sx{margin-top:26px;background-color:var(--stock);background-image:var(--grain);color:var(--ink);border:2px solid var(--ink);box-shadow:0 5px 0 #0004;padding:14px 14px 16px}
+.sx h3{margin:0 0 4px;color:var(--ink);font-size:19px;display:block;border-bottom:3px double var(--ink);padding-bottom:6px}
+.sx .verdict{margin:8px 0 12px;font-size:16px;line-height:1.35;font-weight:600}
+.sx h4{margin:16px 0 8px;font-family:"Graduate",serif;font-weight:400;font-size:13px;text-transform:uppercase}.sx h4 small{display:block;font-family:"Archivo Narrow",sans-serif;font-size:11px;text-transform:none;color:var(--dim);margin-top:2px}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px}.chips span{border:1.5px solid var(--ink);padding:7px 6px;text-align:center;background:#ffffff55}
+.chips:has(span:nth-child(4):last-child){grid-template-columns:repeat(2,1fr)}
+.chips b{display:block;font-family:"Graduate",serif;font-size:19px;line-height:1.1}.chips i{display:block;font-style:normal;font-size:10.5px;line-height:1.25;color:var(--dim);margin-top:3px}
+.strip{display:block;width:100%;height:92px;margin-bottom:2px}.cap{font-size:11.5px;color:var(--dim);margin:4px 0 12px;line-height:1.35}
+.pr{display:grid;grid-template-columns:34px 1fr 40px 30px;gap:8px;align-items:center;padding:3px 0;font-size:13px}.pr span{font-weight:700}
+.pb{position:relative;height:12px;background:#00000014;border:1px solid var(--ink)}.pb i{display:block;height:100%;background:var(--ink)}.pb u{position:absolute;top:-4px;bottom:-4px;width:2px;background:#b3161c}
+.pr b{text-align:right;font-family:"Graduate",serif;font-size:13px}.pr em{font-style:normal;font-size:11px;text-align:right;color:var(--dim)}em.up,td.up{color:#2a6b2f;font-weight:700}em.dn,td.dn{color:#b3161c;font-weight:700}
+ul.li{margin:10px 0 0;padding-left:18px;font-size:13.5px;line-height:1.45}ul.li li{margin-bottom:4px}
+table.mini{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:12px;font-variant-numeric:tabular-nums}table.mini th{font-size:10px;letter-spacing:.1em;text-transform:uppercase;text-align:right;padding:4px;border-bottom:2px solid var(--ink)}table.mini td{text-align:right;padding:5px 4px;border-bottom:1px solid #00000022}table.mini th:first-child,table.mini td:first-child{text-align:left}
+.guys{display:flex;flex-direction:column;gap:2px}.guy{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid #00000022}.guy img{border-radius:50%;background:#fff;object-fit:cover;filter:sepia(.2);flex:none}.guy b{display:block;font-size:15px}.guy i{display:block;font-style:normal;font-size:12px;color:var(--dim)}
+.nfl{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.nfl span{display:flex;align-items:center;gap:6px;border:1.5px solid var(--ink);padding:6px;background:#ffffff55}.nfl b{font-family:"Graduate",serif;font-size:14px}.nfl i{font-style:normal;margin-left:auto;font-size:13px;color:var(--dim)}
+.sx .calls{margin-bottom:10px}.sx .call{box-shadow:none;background:#ffffff55}.sx .rvs{border:0;box-shadow:none;background:none;padding:0;margin:0}.sx .rf{border-color:var(--ink)}
+.sx .wall{margin-top:14px}
+/* scouting grades on the card back */
+.ovr{grid-column:3;grid-row:1/3;display:flex;flex-direction:column;align-items:center;justify-content:center;width:13cqw;height:13cqw;border:2px solid var(--k);border-radius:50%;color:var(--k)}.ovr b{font-family:"Graduate",serif;font-size:5.4cqw;line-height:1}.ovr i{font-style:normal;font-size:2.2cqw;letter-spacing:.14em}
+.bh{grid-template-columns:auto 1fr auto!important}
+.tools{margin:0 2cqw;display:flex;flex-direction:column;gap:1.1cqw}.tool{display:grid;grid-template-columns:22cqw 1fr 7cqw;gap:2cqw;align-items:center;font-size:3.3cqw}.tool span{font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:2.9cqw}
+.tb{height:2.6cqw;border:1px solid var(--k);background:repeating-linear-gradient(90deg,#0000 0,#0000 calc(16.66% - 1px),#00000033 calc(16.66% - 1px),#00000033 16.66%)}.tb i{display:block;height:100%;background:var(--k)}.tool b{font-family:"Graduate",serif;font-size:4cqw;text-align:right;color:var(--k)}
 /* the binder: nine-pocket pages */
 .binder{max-width:760px}.binder h1{font-family:"Graduate",serif;font-weight:400;font-size:34px;text-transform:uppercase;margin:6px 0 2px;text-align:center}.binder .sub{text-align:center;color:#d9caa8;font-size:12px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:18px}
 .sleeve{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:#1b1512;border-radius:10px;padding:12px;box-shadow:inset 0 0 0 1px #ffffff14,0 16px 40px #0009}
