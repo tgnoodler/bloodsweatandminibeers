@@ -1,0 +1,23 @@
+# Keeps the Peanut Night votes. ntfy.sh only remembers messages for 12 hours, so every few hours this folds them into
+# peanut/votes.json. Runs on its own; "Run workflow" on the Actions tab forces one.
+name: Peanut votes
+on:
+  schedule:
+    - cron: '23 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 peanut/persist.py
+      - run: |
+          if ! git diff --quiet -- peanut/votes.json; then
+            git config user.name "peanut-night"
+            git config user.email "peanut-night@users.noreply.github.com"
+            git add peanut/votes.json
+            git commit -m "Peanut votes"
+            git push
+          fi

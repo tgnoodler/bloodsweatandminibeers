@@ -40,6 +40,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;back
 .btn{margin-top:16px;width:100%;background:linear-gradient(#a52a2a,#7a1515);color:#fff;border:0;border-radius:6px;padding:14px;font:700 15px Oswald,sans-serif;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 0 var(--vinyl2),0 10px 20px #000a,inset 0 1px 0 #ffffff33;transition:transform .1s}
 .btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--vinyl2)}.btn[disabled]{opacity:.6;cursor:wait}
 .msg{font-family:"Permanent Marker",cursive;font-size:14px;color:var(--gold);margin-top:10px;min-height:18px}
+.off{display:inline-block;margin-top:4px;font-family:"Permanent Marker",cursive;font-size:12px;color:#dfe8e099;text-decoration:none;border-bottom:1px dashed #dfe8e066}
 .tray{position:relative;height:16px;margin:-2px 10px 0;background:linear-gradient(#6a4529,#3b2414);border-radius:0 0 4px 4px;box-shadow:0 6px 10px #000a}
 .tray i{position:absolute;top:3px;height:7px;border-radius:3px;background:linear-gradient(#fffdf5,#d9d2c0);box-shadow:0 1px 2px #0008}
 .tray i.e{height:9px;top:2px;width:30px;background:linear-gradient(#2a2a2a,#111);border-radius:2px}
@@ -82,6 +83,7 @@ tr.sum td.win{background:linear-gradient(#0000 25%,#fff17aaa 25% 85%,#0000 85%)}
 <input class="note" name="note" maxlength="140" placeholder="anything else (a plus one, a night you'd be late, who's driving)">
 <button class="btn" type="submit">Put me on the list</button>
 <div class="msg" id="msg"></div>
+<a href="#" id="off" class="off">Cross my name off the list</a>
 </form>
 <div class="tray"><i style="left:14px;width:26px;transform:rotate(-3deg)"></i><i style="left:46px;width:18px;transform:rotate(5deg)"></i><i class="e" style="right:16px"></i></div>
 <div class="cork"><span class="pin" style="left:18px;top:12px"></span><span class="pin b" style="right:22px;top:16px"></span>
@@ -92,10 +94,21 @@ tr.sum td.win{background:linear-gradient(#0000 25%,#fff17aaa 25% 85%,#0000 85%)}
 </div>
 <script>
 (function(){
-var API="", GAMES=[{"id": "w5", "week": 5, "date": "Oct 11", "day": "Sunday, October 11", "time": "7:20 PM", "away": "BAL", "home": "ATL", "kc": false, "month": "October", "ts": 1791764400000}, {"id": "w6", "week": 6, "date": "Oct 18", "day": "Sunday, October 18", "time": "7:20 PM", "away": "DAL", "home": "GB", "kc": false, "month": "October", "ts": 1792369200000}, {"id": "w7", "week": 7, "date": "Oct 25", "day": "Sunday, October 25", "time": "7:20 PM", "away": "KC", "home": "SEA", "kc": true, "month": "October", "ts": 1792974000000}, {"id": "w8", "week": 8, "date": "Nov 1", "day": "Sunday, November 1", "time": "7:20 PM", "away": "PHI", "home": "WAS", "kc": false, "month": "November", "ts": 1793582400000}, {"id": "w9", "week": 9, "date": "Nov 8", "day": "Sunday, November 8", "time": "7:20 PM", "away": "TB", "home": "CHI", "kc": false, "month": "November", "ts": 1794187200000}, {"id": "w10", "week": 10, "date": "Nov 15", "day": "Sunday, November 15", "time": "7:20 PM", "away": "PIT", "home": "CIN", "kc": false, "month": "November", "ts": 1794792000000}, {"id": "w11", "week": 11, "date": "Nov 22", "day": "Sunday, November 22", "time": "7:20 PM", "away": "MIN", "home": "SF", "kc": false, "month": "November", "ts": 1795396800000}, {"id": "w12", "week": 12, "date": "Nov 29", "day": "Sunday, November 29", "time": "7:20 PM", "away": "NE", "home": "LAC", "kc": false, "month": "November", "ts": 1796001600000}, {"id": "w13", "week": 13, "date": "Dec 6", "day": "Sunday, December 6", "time": "7:20 PM", "away": "HOU", "home": "PIT", "kc": false, "month": "December", "ts": 1796606400000}, {"id": "w14", "week": 14, "date": "Dec 13", "day": "Sunday, December 13", "time": "7:20 PM", "away": "BUF", "home": "GB", "kc": false, "month": "December", "ts": 1797211200000}, {"id": "w15", "week": 15, "date": "Dec 20", "day": "Sunday, December 20", "time": "7:20 PM", "away": "DET", "home": "MIN", "kc": false, "month": "December", "ts": 1797816000000}, {"id": "w16", "week": 16, "date": "Dec 27", "day": "Sunday, December 27", "time": "7:20 PM", "away": "JAX", "home": "DAL", "kc": false, "month": "December", "ts": 1798420800000}, {"id": "w17", "week": 17, "date": "Jan 3", "day": "Sunday, January 3", "time": "7:20 PM", "away": "PHI", "home": "SF", "kc": false, "month": "January", "ts": 1799025600000}], MONTHS=["October", "November", "December", "January"], NAMES={"ARI": "Cardinals", "ATL": "Falcons", "BAL": "Ravens", "BUF": "Bills", "CAR": "Panthers", "CHI": "Bears", "CIN": "Bengals", "CLE": "Browns", "DAL": "Cowboys", "DEN": "Broncos", "DET": "Lions", "GB": "Packers", "HOU": "Texans", "IND": "Colts", "JAX": "Jaguars", "KC": "Chiefs", "LV": "Raiders", "LAC": "Chargers", "LAR": "Rams", "MIA": "Dolphins", "MIN": "Vikings", "NE": "Patriots", "NO": "Saints", "NYG": "Giants", "NYJ": "Jets", "PHI": "Eagles", "PIT": "Steelers", "SF": "49ers", "SEA": "Seahawks", "TB": "Buccaneers", "TEN": "Titans", "WAS": "Commanders"}, TVN=3;
+var TOPIC="bsmb-peanut-cdf6f90a", NTFY='https://ntfy.sh/'+TOPIC, GAMES=[{"id": "w5", "week": 5, "date": "Oct 11", "day": "Sunday, October 11", "time": "7:20 PM", "away": "BAL", "home": "ATL", "kc": false, "month": "October", "ts": 1791764400000}, {"id": "w6", "week": 6, "date": "Oct 18", "day": "Sunday, October 18", "time": "7:20 PM", "away": "DAL", "home": "GB", "kc": false, "month": "October", "ts": 1792369200000}, {"id": "w7", "week": 7, "date": "Oct 25", "day": "Sunday, October 25", "time": "7:20 PM", "away": "KC", "home": "SEA", "kc": true, "month": "October", "ts": 1792974000000}, {"id": "w8", "week": 8, "date": "Nov 1", "day": "Sunday, November 1", "time": "7:20 PM", "away": "PHI", "home": "WAS", "kc": false, "month": "November", "ts": 1793582400000}, {"id": "w9", "week": 9, "date": "Nov 8", "day": "Sunday, November 8", "time": "7:20 PM", "away": "TB", "home": "CHI", "kc": false, "month": "November", "ts": 1794187200000}, {"id": "w10", "week": 10, "date": "Nov 15", "day": "Sunday, November 15", "time": "7:20 PM", "away": "PIT", "home": "CIN", "kc": false, "month": "November", "ts": 1794792000000}, {"id": "w11", "week": 11, "date": "Nov 22", "day": "Sunday, November 22", "time": "7:20 PM", "away": "MIN", "home": "SF", "kc": false, "month": "November", "ts": 1795396800000}, {"id": "w12", "week": 12, "date": "Nov 29", "day": "Sunday, November 29", "time": "7:20 PM", "away": "NE", "home": "LAC", "kc": false, "month": "November", "ts": 1796001600000}, {"id": "w13", "week": 13, "date": "Dec 6", "day": "Sunday, December 6", "time": "7:20 PM", "away": "HOU", "home": "PIT", "kc": false, "month": "December", "ts": 1796606400000}, {"id": "w14", "week": 14, "date": "Dec 13", "day": "Sunday, December 13", "time": "7:20 PM", "away": "BUF", "home": "GB", "kc": false, "month": "December", "ts": 1797211200000}, {"id": "w15", "week": 15, "date": "Dec 20", "day": "Sunday, December 20", "time": "7:20 PM", "away": "DET", "home": "MIN", "kc": false, "month": "December", "ts": 1797816000000}, {"id": "w16", "week": 16, "date": "Dec 27", "day": "Sunday, December 27", "time": "7:20 PM", "away": "JAX", "home": "DAL", "kc": false, "month": "December", "ts": 1798420800000}, {"id": "w17", "week": 17, "date": "Jan 3", "day": "Sunday, January 3", "time": "7:20 PM", "away": "PHI", "home": "SF", "kc": false, "month": "January", "ts": 1799025600000}], MONTHS=["October", "November", "December", "January"], NAMES={"ARI": "Cardinals", "ATL": "Falcons", "BAL": "Ravens", "BUF": "Bills", "CAR": "Panthers", "CHI": "Bears", "CIN": "Bengals", "CLE": "Browns", "DAL": "Cowboys", "DEN": "Broncos", "DET": "Lions", "GB": "Packers", "HOU": "Texans", "IND": "Colts", "JAX": "Jaguars", "KC": "Chiefs", "LV": "Raiders", "LAC": "Chargers", "LAR": "Rams", "MIA": "Dolphins", "MIN": "Vikings", "NE": "Patriots", "NO": "Saints", "NYG": "Giants", "NYJ": "Jets", "PHI": "Eagles", "PIT": "Steelers", "SF": "49ers", "SEA": "Seahawks", "TB": "Buccaneers", "TEN": "Titans", "WAS": "Commanders"}, TVN=3;
+var VALID={};GAMES.forEach(function(g){VALID[g.id]=1;});
 var F=document.getElementById('f'), NM=document.getElementById('nm'), MSG=document.getElementById('msg'), GRID=document.getElementById('grid'), SUB=document.getElementById('sub2'), PICK=document.getElementById('pick');
 var votes={}; var me=''; try{me=localStorage.getItem('peanut:name')||'';}catch(e){}
 if(me) NM.value=me;
+function keyOf(n){return String(n||'').trim().toLowerCase();}
+function apply(v,t){
+  var name=String(v.name||'').trim().slice(0,40);if(!name)return;
+  var k=keyOf(name),cur=null;Object.keys(votes).forEach(function(n){if(keyOf(n)===k)cur=n;});
+  if(cur&&(votes[cur].t||0)>=t)return;
+  if(cur)delete votes[cur];
+  if(v.remove)return;
+  votes[name]={games:(v.games||[]).map(String).filter(function(g){return VALID[g];}),note:String(v.note||'').slice(0,140),t:t};
+}
+function parseFeed(txt){txt.split('\n').forEach(function(line){var m;try{m=JSON.parse(line);}catch(e){return;}if(!m||m.event!=='message')return;var v;try{v=JSON.parse(m.message);}catch(e){return;}if(v&&typeof v==='object')apply(v,m.time||0);});}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 /* the TVs over the bar */
 function tvShow(i,g){
@@ -110,7 +123,7 @@ if(GAMES.length>TVN) setInterval(function(){tvk=(tvk+TVN)%GAMES.length;for(var i
 /* the sheet */
 function render(){
   var names=Object.keys(votes).sort(function(a,b){return (votes[b].updated||0)-(votes[a].updated||0);});
-  if(!names.length){GRID.innerHTML='<div class="empty">Nobody on the list yet. Be first.</div>';SUB.textContent=API?'Nobody has signed in':'The list is not wired up yet';PICK.innerHTML='';return;}
+  if(!names.length){GRID.innerHTML='<div class="empty">Nobody on the list yet. Be first.</div>';SUB.textContent='Nobody has signed in';PICK.innerHTML='';return;}
   SUB.textContent=names.length+(names.length===1?' name':' names')+' on the sheet';
   var h='<table><tr><th>Name</th>'+GAMES.map(function(g){return '<th>'+esc(g.date)+'<small>'+(g.kc?'Chiefs':esc(g.away+'-'+g.home))+'</small></th>';}).join('')+'</tr>';
   names.forEach(function(n,ni){var v=votes[n];h+='<tr><td title="'+esc(v.note||'')+'">'+esc(n)+(v.note?' <span title="'+esc(v.note)+'">*</span>':'')+'</td>'+GAMES.map(function(g,gi){if(g.kc)return '<td class="kc"><span>&times;</span></td>';return '<td>'+(v.games.indexOf(g.id)>=0?'<svg class="pn" style="--r:'+(((ni*7+gi*13)%50)-25)+'deg"><use href="#pnut"/></svg>':'')+'</td>';}).join('')+'</tr>';});
@@ -125,18 +138,30 @@ function render(){
     return '<div class="pick"><b>'+esc(m)+':</b> tied at '+counts[gs[0].id]+' between '+gs.map(function(g){return esc(g.date)+' ('+esc(g.away)+' at '+esc(g.home)+')';}).join(' and ')+'. Somebody break it.</div>';}).join('')+(notes?'<div class="pick note2">'+notes+'</div>':'');
 }
 function load(){
-  if(!API){render();return;}
-  fetch(API+'?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.json();}).then(function(j){votes=j.votes||{};render();var v=votes[NM.value.trim()];if(v){[].forEach.call(F.querySelectorAll('input[name=g]'),function(b){b.checked=v.games.indexOf(b.value)>=0;});F.note.value=v.note||'';}}).catch(function(){SUB.textContent='Could not reach the list. Try again in a minute.';});
+  var a=fetch('votes.json?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.json():{votes:{}};}).catch(function(){return {votes:{}};});
+  var b=fetch(NTFY+'/json?poll=1&since=all',{cache:'no-store'}).then(function(r){return r.text();}).catch(function(){return null;});
+  Promise.all([a,b]).then(function(res){
+    votes={};var j=res[0]||{};Object.keys(j.votes||{}).forEach(function(n){var v=j.votes[n]||{};apply({name:n,games:v.games,note:v.note},v.t||0);});
+    if(res[1]!==null)parseFeed(res[1]);
+    render();if(res[1]===null)SUB.textContent='Could not reach the list. Showing what was saved.';
+    var mine=null;Object.keys(votes).forEach(function(n){if(keyOf(n)===keyOf(NM.value))mine=votes[n];});
+    if(mine){[].forEach.call(F.querySelectorAll('input[name=g]'),function(b){b.checked=mine.games.indexOf(b.value)>=0;});F.note.value=mine.note||'';}
+  });
+}
+function send(payload,ok,fail){
+  fetch(NTFY,{method:'POST',body:JSON.stringify(payload)}).then(function(r){if(!r.ok)throw new Error('post');return r.json();}).then(function(m){apply(payload,(m&&m.time)||Math.floor(Date.now()/1000));render();ok();}).catch(fail);
 }
 F.addEventListener('submit',function(e){
   e.preventDefault();var name=NM.value.trim();if(!name){NM.focus();return;}
   var games=[].map.call(F.querySelectorAll('input[name=g]:checked'),function(b){return b.value;});
   try{localStorage.setItem('peanut:name',name);}catch(err){}
-  if(!API){MSG.textContent='The list is not wired up yet. Tell Tanner.';return;}
   var btn=F.querySelector('.btn');btn.disabled=true;MSG.textContent='Writing it down';
-  fetch(API,{method:'POST',body:JSON.stringify({name:name,games:games,note:F.note.value.trim()})}).then(function(r){return r.json();}).then(function(j){
-    if(!j.ok)throw new Error(j.error||'no');votes=j.votes||votes;render();MSG.textContent=games.length?'You\'re on the list.':'Marked you down for none of them. Cold.';
-  }).catch(function(){MSG.textContent='That did not go through. Try again.';}).then(function(){btn.disabled=false;});
+  send({v:1,name:name,games:games,note:F.note.value.trim()},function(){MSG.textContent=games.length?'You\'re on the list.':'Marked you down for none of them. Cold.';btn.disabled=false;},function(){MSG.textContent='That did not go through. Try again.';btn.disabled=false;});
+});
+document.getElementById('off').addEventListener('click',function(e){
+  e.preventDefault();var name=NM.value.trim();if(!name){NM.focus();return;}
+  MSG.textContent='Crossing you off';
+  send({v:1,name:name,remove:true},function(){MSG.textContent='Off the list.';[].forEach.call(F.querySelectorAll('input[name=g]'),function(b){b.checked=false;});F.note.value='';},function(){MSG.textContent='That did not go through. Try again.';});
 });
 load();
 })();
