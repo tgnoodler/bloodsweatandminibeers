@@ -1,0 +1,23 @@
+# Keeps the Ghost Desk saves. ntfy.sh only remembers messages for 12 hours, so every few hours this folds them into
+# ghost/desk.json. Runs on its own; "Run workflow" on the Actions tab forces one.
+name: Ghost desk
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  persist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 ghost/persist.py
+      - run: |
+          if ! git diff --quiet -- ghost/desk.json; then
+            git config user.name "ghost-desk"
+            git config user.email "ghost-desk@users.noreply.github.com"
+            git add ghost/desk.json
+            git commit -m "Ghost desk saves"
+            git push
+          fi
