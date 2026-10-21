@@ -1,25 +1,35 @@
 {
- "updated": 1792545334,
+ "updated": 1792555682,
  "weeks": {
   "6": {
    "s01": {
-    "deck": "Why add a defense when you can chug a malt beverage instead?",
-    "draft": "\"Stay thirsty my friends\" - Ian Hoby.\n\nFollowing an Iceless week across the league, our proud league Commissioner vowed not to witness another dry week, picking up the Panthers defense for absolutely no reason. \"Dragging teammates into the fight\" is a term used across the hockey world, and dragging league mates into chugging Smirnoff Ices is a proud showing of leadership that only Blood Sweat and Mini Beers can provide.",
-    "image": "Ian licking his lips and rubbing his hands at a frosty Smirnoff Ice",
+    "deck": "Ian Hoby, or Ian No D?",
+    "draft": "\"Stay thirsty my friends\" - Ian Hoby.\n\nFollowing an Iceless week across the league, Commissioner vowed not to witness another one, picking up the Panthers defense for absolutely no reason. \"Dragging teammates into the fight\" is a term used across the hockey world to describe getting teammates involved, and dragging league mates into chugging Smirnoff Ices is a fantasy commitment only seen in Blood Sweat and Mini Beers.\n\nWith four Ices across the league this week, activity is trending back up. Ian, Sko, Scott and Brad will wet their whistles after week six. Tanner, John T, Craig and Ty still sit Iceless after six weeks.  Who is the next to join the party?",
+    "image": "Ian licking his lips and rubbing his hands staring at a frosty Smirnoff Ice",
     "name": "Ty",
     "pick": null,
-    "t": 1792544456,
-    "taken": false,
+    "t": 1792549312,
+    "taken": true,
     "title": "After A Week Of No Ices, Commissioner Voluntarily Ices Himself"
+   },
+   "s06": {
+    "deck": "Tanner and Brad are 88 points clear of third, the next nine are 76 points apart top to bottom, and twelfth is 54 behind eleventh.",
+    "draft": "After six weeks, the league standings are beginning to shape up. Based on points scored, Tanner and Brad are showing to be the league blue bloods of the year. 960 and 887 respective points scored, with no other team breaking 800 after six weeks. Is this a two man show, or does someone emerge from the middle pack to join them?\n\nBlood Sweat and Mini Beers is thick in the middle this year. One could say the league standings have a beer gut. 8 of the 12 teams in the league are sitting in the 700's for points scored. Ian, John T and Ty sit at the top of the middle tier, with each scoring 790+. \n\nThen there is Sko. The collard greens goblin himself has scored 669 fantasy points this year, yet he has lucked his way into 629 points against. He somehow sits at 6-6, even with median scoring. Davante Adams is now on the IR, and Scary Terry is out for the year. Does the mirage evaporate?",
+    "image": "Tiffany Gomas the viral crazy plane lady pointing at Sko saying \"That mother fucker back there is not real!\"",
+    "name": "Ty",
+    "pick": 0,
+    "t": 1792549519,
+    "taken": true,
+    "title": "Two Contenders, Nine Coin Flips And Sko: The League At Week Six"
    },
    "s20": {
     "deck": "His five head-to-head losses came against scores of 141, 138, 155, 139 and 169, and he won the week he scored 140.",
-    "draft": "",
-    "image": "Craig face, the jumpsuit",
-    "name": "Test",
+    "draft": "Fantasy football can be cruel. No league member knows that more this year more than Craig.\n\nStaring up the standings from 12th place, he has scored a respectable 750 points for, good enough to be considered a member of the league's middle pack. His opponents simply have not cared, though. His 877 points against is second most in the league, only behind Ty. \n\nAfter seeing 141, 138, 155, 139 and 169 put up by his opponents through five weeks, he finally breaks though with 140 points and has a 2-0 week with the median score in his favor. The betting favorite after week five, all eyes will be on Craig to see if his luck has finally turned.",
+    "image": "Really sweaty and panicked Craig in a caddy outfit trying to climb out of a hole",
+    "name": "Ty",
     "pick": 0,
-    "t": 1792536982,
-    "taken": false,
+    "t": 1792548432,
+    "taken": true,
     "title": "Craig Is 3-9 And The Unluckiest Man In The League"
    }
   }
