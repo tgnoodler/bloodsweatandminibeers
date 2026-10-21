@@ -1,1 +1,27 @@
-{"updated": 0, "weeks": {}}
+{
+ "updated": 1792545334,
+ "weeks": {
+  "6": {
+   "s01": {
+    "deck": "Why add a defense when you can chug a malt beverage instead?",
+    "draft": "\"Stay thirsty my friends\" - Ian Hoby.\n\nFollowing an Iceless week across the league, our proud league Commissioner vowed not to witness another dry week, picking up the Panthers defense for absolutely no reason. \"Dragging teammates into the fight\" is a term used across the hockey world, and dragging league mates into chugging Smirnoff Ices is a proud showing of leadership that only Blood Sweat and Mini Beers can provide.",
+    "image": "Ian licking his lips and rubbing his hands at a frosty Smirnoff Ice",
+    "name": "Ty",
+    "pick": null,
+    "t": 1792544456,
+    "taken": false,
+    "title": "After A Week Of No Ices, Commissioner Voluntarily Ices Himself"
+   },
+   "s20": {
+    "deck": "His five head-to-head losses came against scores of 141, 138, 155, 139 and 169, and he won the week he scored 140.",
+    "draft": "",
+    "image": "Craig face, the jumpsuit",
+    "name": "Test",
+    "pick": 0,
+    "t": 1792536982,
+    "taken": false,
+    "title": "Craig Is 3-9 And The Unluckiest Man In The League"
+   }
+  }
+ }
+}
