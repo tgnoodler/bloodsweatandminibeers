@@ -460,6 +460,7 @@ function filter(q,only){
 }
 function parse(h){
   var m,pre=['career-','o-','p-'],i;
+  if(/^ch(I|II|III)$/.test(h))return {k:'records',a:h};   // the Record Book's old chapter addresses
   if(h.indexOf('vs-')==0){m=h.slice(3).split('-vs-');return {k:'vs',a:m[0],b:m[1]||''}}
   for(i=0;i<pre.length;i++)if(h.indexOf(pre[i])==0)return {k:pre[i].slice(0,-1),a:h.slice(pre[i].length)};
   i=h.indexOf('-');return {k:i>0?h.slice(0,i):h,a:i>0?h.slice(i+1):''};
