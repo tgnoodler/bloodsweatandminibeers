@@ -1,6 +1,6 @@
-# Keeps the Scoreboard on the right week. If sunday.html and index.html are still built for last week when this
-# week's first game is about to kick off, this rebuilds their week data from Sleeper. It stands down when the
-# regular build has already done it. Runs on its own; "Run workflow" on the Actions tab forces a check.
+# Keeps a Scoreboard on the right week. If sunday.html is still built for last week when this
+# week's first game is about to kick off, this builds scoreboard.html for the new week from Sleeper and rolls the
+# home page. Otherwise scoreboard.html forwards to sunday.html. Runs on its own; "Run workflow" forces a check.
 name: Scoreboard week
 on:
   schedule:
@@ -16,10 +16,10 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 scoreboard/roll.py
       - run: |
-          if ! git diff --quiet -- sunday.html index.html wire.json; then
+          if [ -n "$(git status --porcelain -- scoreboard.html index.html)" ]; then
             git config user.name "scoreboard"
             git config user.email "scoreboard@users.noreply.github.com"
-            git add sunday.html index.html wire.json
+            git add scoreboard.html index.html
             git commit -m "Scoreboard week roll"
             for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done
           fi

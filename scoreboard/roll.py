@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
-"""Keeps the Scoreboard on the right week.
+"""Keeps a Scoreboard on the right week.
 
 The Scoreboard (sunday.html) and the home page (index.html) carry the week's
 matchups, lineups, projections and kickoff times inside the page. The live
 scores come straight from Sleeper in the browser, but only for the week the
-page was built for. If the page is still on last week when this week's first
-game is about to kick off, this rebuilds that data from Sleeper.
+page was built for.
 
-It stands down whenever the page is already on the current week and was not
-built here, so it never fights the regular build. A page it built is marked
-"cloud": true and is kept fresh when rosters or kickoff times change.
+The regular build owns sunday.html and rewrites it on every run, so this never
+touches it. Instead it keeps scoreboard.html:
+
+  - sunday.html is on the current week   -> scoreboard.html just forwards to it
+  - sunday.html is still on last week    -> scoreboard.html is a copy of it with
+    within 12 hours of the first kickoff    this week's data rebuilt from Sleeper
+
+The home page is rolled the same way in place, and its Scoreboard links point
+at scoreboard.html. Pages built here are marked "cloud": true and are kept
+fresh when rosters or kickoff times change.
 
 Run from the repo root:  python3 scoreboard/roll.py [--force]
 """
 import json, math, re, sys, time, urllib.request
 
-PAGES = ['sunday.html', 'index.html']
 LEAD_MS = 12 * 3600 * 1000          # roll this long before the week's first kickoff
 API = 'https://api.sleeper.app'
 
@@ -133,86 +138,110 @@ def cards(s, games):
     return s
 
 
+GUARD_AT = 'function gotWire(j){var list=j&&j.ev?j.ev:j;if(!list||!list.length)return;'
+GUARD = ('/*bsmb-wk*/var _k=0;for(var _t in (H.kick||{}))if(!_k||H.kick[_t]<_k)_k=H.kick[_t];'
+         'if(_k&&Math.max(list[0].t||0,list[list.length-1].t||0)<_k-432e5)return;')
+FORWARD = ('<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="robots" content="noindex">'
+           '<meta http-equiv="refresh" content="0;url=sunday.html"><title>Scoreboard</title></head>'
+           '<body><a href="sunday.html">Scoreboard</a><script>location.replace("sunday.html"+location.hash)</script></body></html>')
+
+
+def guard_wire(s):
+    """Make the page ignore a wire.json left over from an earlier week."""
+    if '/*bsmb-wk*/' in s or GUARD_AT not in s:
+        return s
+    return s.replace(GUARD_AT, GUARD_AT + GUARD, 1)
+
+
+def render(s, H, week, data):
+    """Return the page `s` with its week data rebuilt for `week`."""
+    ms, sc, sc_next, players_db, proj = data
+    H2, lean, seed_sc = build(H, week, ms, sc, sc_next, players_db, proj)
+    a, b, _ = grab(s, 'window.HUB')
+    s = s[:a] + json.dumps(H2, separators=(',', ':'), ensure_ascii=False) + s[b:]
+    seed = grab(s, 'window.HUBSEED')
+    if seed:
+        a2, b2, SE = seed
+        try:
+            rs = json.load(open('radar_status.json'))
+        except Exception:
+            rs = SE.get('rs') or {}
+        s = s[:a2] + json.dumps({'rs': rs, 'sc': seed_sc, 'ms': lean}, separators=(',', ':'), ensure_ascii=False) + s[b2:]
+    s = cards(s, H2['games'])
+    for old in range(H['week'], week):
+        s = s.replace('Scoreboard, Week %d' % old, 'Scoreboard, Week %d' % week)
+        s = s.replace('<b class="ttl">Scoreboard</b><em>Week %d</em>' % old, '<b class="ttl">Scoreboard</b><em>Week %d</em>' % week)
+    return guard_wire(s), H2
+
+
+def read(path):
+    try:
+        return open(path).read()
+    except FileNotFoundError:
+        return ''
+
+
 def main():
     force = '--force' in sys.argv
     state = get('/v1/state/nfl')
     if state.get('season_type') != 'regular':
         print('not the regular season, nothing to do'); return
     week, season = int(state['week']), state['season']
-    pages = {}
-    for page in PAGES:
-        s = open(page).read()
-        got = grab(s, 'window.HUB')
-        if got:
-            pages[page] = (s, got[2])
-    if not pages:
-        print('no scoreboard pages found'); return
-    league = next(iter(pages.values()))[1]['league']
+    sun, idx, cur = read('sunday.html'), read('index.html'), read('scoreboard.html')
+    gs, gi, gc = grab(sun, 'window.HUB'), grab(idx, 'window.HUB'), grab(cur, 'window.HUB')
+    if not gs:
+        print('sunday.html has no scoreboard data'); return
+    Hs = gs[2]
+    if Hs.get('season') != season:
+        print('season mismatch, nothing to do'); return
     sc = get('/scores/nfl/regular/%s/%d' % (season, week))
     starts = [g['start_time'] for g in sc if g.get('start_time')]
     if not starts:
         print('no schedule for week', week); return
-    now = int(time.time() * 1000)
-    ms = None
-    todo = []
-    for page, (s, H) in pages.items():
-        if H.get('season') != season:
-            continue
-        behind = H['week'] < week and now >= min(starts) - LEAD_MS
-        stale = False
-        if H['week'] == week and H.get('cloud'):
-            ms = ms or get('/v1/league/%s/matchups/%d' % (league, week))
-            ids = {p for t in ms for p in (t.get('players') or [])}
-            kick = {tm: g['start_time'] for g in sc for tm in ((g.get('metadata') or {}).get('home_team'), (g.get('metadata') or {}).get('away_team')) if tm}
-            stale = ids != set(H.get('players') or {}) or kick != (H.get('kick') or {})
-        if behind or stale or (force and H['week'] <= week):
-            todo.append(page)
-        print(page, 'on week', H['week'], '| current week', week, '| behind' if behind else '', '| stale' if stale else '')
-    if not todo:
-        print('nothing to do'); return
-    ms = ms or get('/v1/league/%s/matchups/%d' % (league, week))
+    due = int(time.time() * 1000) >= min(starts) - LEAD_MS
+    ms = get('/v1/league/%s/matchups/%d' % (Hs['league'], week))
+    ids = {p for t in ms for p in (t.get('players') or [])}
+    kick = {tm: g['start_time'] for g in sc for tm in ((g.get('metadata') or {}).get('home_team'), (g.get('metadata') or {}).get('away_team')) if tm}
+    fresh = lambda H: H and H.get('week') == week and ids == set(H.get('players') or {}) and kick == (H.get('kick') or {})
     n_games = len([1 for v in _pairs(ms).values() if len(v) == 2])
-    try:
-        sc_next = get('/scores/nfl/regular/%s/%d' % (season, week + 1))
-    except Exception:
-        sc_next = []
-    players_db = get('/v1/players/nfl')
-    proj = {x['player_id']: ((x.get('stats') or {}).get('pts_ppr') or 0)
-            for x in get('/projections/nfl/%s/%d?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF' % (season, week))}
-    rolled = False
-    for page in todo:
-        s, H = pages[page]
-        n_cards = len(re.findall(r'<article class="fgt" data-i="\d+"', s))
-        if n_cards and n_cards != n_games:
-            print(page, 'has', n_cards, 'matchup cards but the week has', n_games, 'games; leaving it alone'); continue
-        H2, lean, seed_sc = build(H, week, ms, sc, sc_next, players_db, proj)
-        a, b, _ = grab(s, 'window.HUB')
-        s = s[:a] + json.dumps(H2, separators=(',', ':'), ensure_ascii=False) + s[b:]
-        seed = grab(s, 'window.HUBSEED')
-        if seed:
-            a2, b2, SE = seed
-            try:
-                rs = json.load(open('radar_status.json'))
-            except Exception:
-                rs = SE.get('rs') or {}
-            s = s[:a2] + json.dumps({'rs': rs, 'sc': seed_sc, 'ms': lean}, separators=(',', ':'), ensure_ascii=False) + s[b2:]
-        s = cards(s, H2['games'])
-        for old in range(H['week'], week):
-            s = s.replace('Scoreboard, Week %d' % old, 'Scoreboard, Week %d' % week)
-            s = s.replace('<b class="ttl">Scoreboard</b><em>Week %d</em>' % old, '<b class="ttl">Scoreboard</b><em>Week %d</em>' % week)
-        open(page, 'w').write(s)
-        rolled = rolled or H['week'] != week
-        print(page, '-> week', week, [(g['a'], g['b']) for g in H2['games']])
-    if rolled:
-        # last week's touchdowns and Ices do not belong in this week's Rundown
+    cards_ok = lambda s: len(re.findall(r'<article class="fgt" data-i="\d+"', s)) in (0, n_games)
+
+    sun_behind = Hs['week'] < week and due
+    want_board = sun_behind and cards_ok(sun) and (force or not fresh(gc and gc[2]))
+    Hi = gi[2] if gi else None
+    want_home = bool(Hi) and cards_ok(idx) and (
+        (Hi['week'] < week and due) or (Hi['week'] == week and Hi.get('cloud') and (force or not fresh(Hi))))
+    print('week', week, '| sunday.html on', Hs['week'], '| home on', Hi and Hi['week'],
+          '| board', 'rebuild' if want_board else ('keep' if sun_behind else 'forward'), '| home', 'rebuild' if want_home else 'keep')
+
+    data = None
+    if want_board or want_home:
         try:
-            w = json.load(open('wire.json'))
-            ev = w.get('ev') if isinstance(w, dict) else w
-            if ev and max(e.get('t', 0) for e in ev) < min(starts) - LEAD_MS:
-                open('wire.json', 'w').write('{"v":2,"ev":[],"tds":0,"iced":[]}')
-                print('wire.json cleared')
-        except Exception as e:
-            print('wire.json left alone:', e)
+            sc_next = get('/scores/nfl/regular/%s/%d' % (season, week + 1))
+        except Exception:
+            sc_next = []
+        players_db = get('/v1/players/nfl')
+        proj = {x['player_id']: ((x.get('stats') or {}).get('pts_ppr') or 0)
+                for x in get('/projections/nfl/%s/%d?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF' % (season, week))}
+        data = (ms, sc, sc_next, players_db, proj)
+
+    if not sun_behind:
+        if cur != FORWARD:
+            open('scoreboard.html', 'w').write(FORWARD); print('scoreboard.html -> forwards to sunday.html')
+    elif want_board:
+        page, H2 = render(sun, Hs, week, data)
+        page = page.replace('href="sunday.html"', 'href="scoreboard.html"')
+        open('scoreboard.html', 'w').write(page)
+        print('scoreboard.html -> week', week, [(g['a'], g['b']) for g in H2['games']])
+
+    out = idx
+    if want_home:
+        out, H2 = render(out, Hi, week, data)
+        print('index.html -> week', week)
+    if gi:
+        out = guard_wire(out).replace('href="sunday.html"', 'href="scoreboard.html"')
+    if out != idx:
+        open('index.html', 'w').write(out)
 
 
 def _pairs(ms):
