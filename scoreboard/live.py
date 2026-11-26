@@ -22,6 +22,7 @@ SOON_MS = 75 * 60 * 1000        # stay up if a game kicks off within this long
 COOL_MS = 12 * 60 * 1000        # and this long after the last one ends, for the Ice calls
 SETTLE = 40                     # seconds a push is given to finish building on the site before the next one
 PUSH_EVERY_MS = 60 * 1000       # and the least time between our own pushes
+BEAT_MS = 10 * 60 * 1000        # with nothing to report, still refresh the status this often while games are on
 STATS = '/stats/nfl/%s/%d?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF'
 REPO, TOKEN = os.environ.get('GITHUB_REPOSITORY'), os.environ.get('GITHUB_TOKEN')
 WORKFLOW = 'scoreboard-live.yml'
@@ -136,7 +137,8 @@ def main():
     E = Engine(week, W, read_json(HERE + 'state.json'), read_json(HERE + 'wire.json'))
     publish(['.'], 'Scoreboard week roll', push)
     injury = lambda pid: get('/v1/players/nfl/' + pid, tries=1)
-    last_live = last_build = last_push = 0
+    last_live = last_build = 0
+    last_push = now_ms()
     passes = 0
     relay = False
     while True:
@@ -175,6 +177,11 @@ def main():
                 if strip(E.s, 'last') != strip(read_json(HERE + 'state.json'), 'last'):
                     write_json(HERE + 'state.json', E.s)
                 passes += 1
+                if live and now - last_push >= BEAT_MS:     # a quiet stretch: prove we are still watching
+                    E.status['built'] = now
+                    write_json(HERE + 'status.json', E.status)
+                    write_json(HERE + 'state.json', E.s)
+                    print(time.strftime('%H:%M:%S'), 'still watching:', sum(1 for g in games if g['st'] == 1), 'live,', len(E.ev), 'entries')
                 if now - last_push >= PUSH_EVERY_MS and publish(['.'], 'Rundown', push):
                     last_push = now_ms()
         except Exception as e:                      # one bad pass must not end the watch
