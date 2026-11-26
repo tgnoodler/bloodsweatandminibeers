@@ -210,6 +210,10 @@ def main(force=False):
     if not due:
         # between weeks: last week's final stays up. Only make sure there is a page at all.
         if Hc:
+            try:
+                weekly.main()                       # last week's report card may still need drawing
+            except Exception as e:
+                print('weekly report skipped:', repr(e))
             report(Hc['week'], season); repoint(); print('week', week, 'not due yet; page stays on week', Hc['week']); return
         sc = get('/scores/nfl/regular/%s/%d' % (season, target))
     ms = get('/v1/league/%s/matchups/%d' % (Hs['league'], target))
