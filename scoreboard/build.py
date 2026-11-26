@@ -117,27 +117,35 @@ def week_data(H, week, ms, sc, sc_next, players_db, proj):
     return H2, lean, seed_sc
 
 
-def cards(s, games):
-    """Rewrite the matchup cards in the page for this week's pairings."""
+def cards(s, games, faces=None):
+    """Rewrite the matchup cards in the page for this week's pairings, however many there are."""
     arts = re.findall(r'<article class="fgt" data-i="\d+".*?</article>', s, flags=re.S)
-    feed = {}
+    if not arts:
+        return s
+    feed = dict(faces or {})
     for art in arts:
         for src, nm in re.findall(r'<img class="ph" src="([^"]+)"[^>]*>.*?<span class="nm"><i>([^<]+)</i>', art, flags=re.S):
             feed[nm] = src
-    for art, g in zip(arts, games):
+    out = []
+    for i, g in enumerate(games):
+        art = arts[min(i, len(arts) - 1)]           # a playoff week can have more or fewer games than last week's page
         srcs = re.findall(r'<img class="ph" src="([^"]+)"', art)
         nms = re.findall(r'<span class="nm"><i>([^<]+)</i>', art)
         new = art.replace('src="%s"' % srcs[0], 'src="@@A@@"', 1).replace('src="%s"' % srcs[1], 'src="@@B@@"', 1)
         new = new.replace('<span class="nm"><i>%s</i>' % nms[0], '<span class="nm"><i>@@NA@@</i>', 1)
         new = new.replace('<span class="nm"><i>%s</i>' % nms[1], '<span class="nm"><i>@@NB@@</i>', 1)
-        new = (new.replace('@@A@@', feed[g['a']]).replace('@@B@@', feed[g['b']])
+        new = (new.replace('@@A@@', feed.get(g['a'], '')).replace('@@B@@', feed.get(g['b'], ''))
                   .replace('@@NA@@', g['a']).replace('@@NB@@', g['b']))
         aw = round(g['aw'])
         new = re.sub(r'<span class="wp a">\d+%</span>', '<span class="wp a">%d%%</span>' % aw, new)
         new = re.sub(r'<span class="wp b">\d+%</span>', '<span class="wp b">%d%%</span>' % (100 - aw), new)
         new = re.sub(r'style="--p:[\d.]+%"', 'style="--p:%s%%"' % g['aw'], new)
-        s = s.replace(art, new, 1)
-    return s
+        new = re.sub(r'data-i="\d+" style="order:\d+"', 'data-i="%d" style="order:%d"' % (i, i), new, count=1)
+        new = re.sub(r'aria-controls="hublu\d+"', 'aria-controls="hublu%d"' % i, new)
+        new = re.sub(r'id="hublu\d+"', 'id="hublu%d"' % i, new)
+        out.append(new)
+    a, b = s.index(arts[0]), s.index(arts[-1]) + len(arts[-1])
+    return s[:a] + ''.join(out) + s[b:]
 
 
 def wire_up(s):
@@ -164,7 +172,7 @@ def render(s, H, week, data, status):
     if seed:
         a2, b2, _ = seed
         s = s[:a2] + json.dumps({'rs': status, 'sc': seed_sc, 'ms': lean}, separators=(',', ':'), ensure_ascii=False) + s[b2:]
-    s = cards(s, H2['games'])
+    s = cards(s, H2['games'], H2.get('faces'))
     for old in range(max(1, week - 3), week):
         s = s.replace('Scoreboard, Week %d' % old, 'Scoreboard, Week %d' % week)
         s = s.replace('<b class="ttl">Scoreboard</b><em>Week %d</em>' % old, '<b class="ttl">Scoreboard</b><em>Week %d</em>' % week)
@@ -220,10 +228,8 @@ def main(force=False):
     ids = {p for t in ms for p in (t.get('players') or [])}
     kick = {tm: g['start_time'] for g in sc for tm in ((g.get('metadata') or {}).get('home_team'), (g.get('metadata') or {}).get('away_team')) if tm}
     fresh = lambda H: bool(H) and H.get('week') == target and H.get('cloudv') == BUILD and ids == set(H.get('players') or {}) and kick == (H.get('kick') or {})
-    n_games = len(pairs(ms))
-    cards_ok = lambda s: len(re.findall(r'<article class="fgt" data-i="\d+"', s)) in (0, n_games)
-    want_board = cards_ok(sun) and (force or not fresh(Hc))
-    want_home = bool(Hi) and cards_ok(idx) and Hi.get('week', 0) <= target and (force or not fresh(Hi))
+    want_board = force or not fresh(Hc)
+    want_home = bool(Hi) and Hi.get('week', 0) <= target and (force or not fresh(Hi))
     want_week = force or not (wk.get('week') == target and ids == set(wk.get('players') or {}) and kick == (wk.get('kick') or {}))
     print('week', week, '| page week', target, '| board', 'rebuild' if want_board else 'keep', '| home', 'rebuild' if want_home else 'keep')
 
