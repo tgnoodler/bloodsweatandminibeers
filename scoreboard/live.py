@@ -9,7 +9,7 @@ they change. Only one copy runs at a time; near GitHub's six-hour limit it start
 
 Run from the repo root:  python3 scoreboard/live.py [--once] [--no-push]
 """
-import json, os, subprocess, sys, time, urllib.request
+import copy, json, os, subprocess, sys, time, urllib.request
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build
 from engine import Engine
@@ -20,6 +20,8 @@ FILES = [HERE + 'wire.json', HERE + 'status.json', HERE + 'state.json']
 MAX_RUN = int(os.environ.get('LIVE_MAX_SECONDS', 5 * 3600 + 15 * 60))
 SOON_MS = 75 * 60 * 1000        # stay up if a game kicks off within this long
 COOL_MS = 12 * 60 * 1000        # and this long after the last one ends, for the Ice calls
+SETTLE = 40                     # seconds a push is given to finish building on the site before the next one
+PUSH_EVERY_MS = 60 * 1000       # and the least time between our own pushes
 STATS = '/stats/nfl/%s/%d?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF'
 REPO, TOKEN = os.environ.get('GITHUB_REPOSITORY'), os.environ.get('GITHUB_TOKEN')
 WORKFLOW = 'scoreboard-live.yml'
@@ -73,6 +75,15 @@ def publish(paths, msg, push=True):
     sh('git', 'commit', '-q', '-m', msg)
     for i in range(5):
         sh('git', 'pull', '--rebase', '-q', 'origin', 'main')
+        # Each push starts a site build, and a newer push cancels one still running. Give the last push, ours or the
+        # home computer's, time to finish building before sending the next, or the site could stop updating.
+        try:
+            age = time.time() - int(sh('git', 'log', '-1', '--format=%ct', 'origin/main').stdout.strip() or 0)
+            if 0 <= age < SETTLE:
+                time.sleep(SETTLE - age)
+                sh('git', 'pull', '--rebase', '-q', 'origin', 'main')
+        except Exception:
+            pass
         if sh('git', 'push', '-q', 'origin', 'HEAD:main').returncode == 0:
             return True
         time.sleep(2 + 2 * i)
@@ -129,7 +140,12 @@ def main():
                     W = read_json(HERE + 'week.json') or W
                     E.W = W
                 stats = get(STATS % (season, week))
-                new = E.tick(now, sc, ms, stats, injury)
+                keep = copy.deepcopy((E.s, E.ev))
+                try:
+                    new = E.tick(now, sc, ms, stats, injury)
+                except Exception:
+                    E.s, E.ev = keep                 # a pass that fails half way must not leave half its work behind
+                    raise
                 for e in new:
                     print(time.strftime('%H:%M:%S'), e['kind'], '|', e['text'])
                 if E.feed() != read_json(HERE + 'wire.json'):
@@ -139,8 +155,8 @@ def main():
                 if strip(E.s, 'last') != strip(read_json(HERE + 'state.json'), 'last'):
                     write_json(HERE + 'state.json', E.s)
                 passes += 1
-                if now - last_push >= 20000 and publish(['.'], 'Rundown', push):
-                    last_push = now
+                if now - last_push >= PUSH_EVERY_MS and publish(['.'], 'Rundown', push):
+                    last_push = now_ms()
         except Exception as e:                      # one bad pass must not end the watch
             print('pass skipped:', repr(e))
             live = soon = True
