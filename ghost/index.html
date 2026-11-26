@@ -37,4 +37,4 @@ document.getElementById('d').addEventListener('submit',function(ev){ev.preventDe
 var saved='';try{saved=localStorage.getItem('ghost:word')||'';}catch(e){}
 if(saved)open(saved,false).catch(function(){W.focus();});else W.focus();
 })();
-</script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script></body></html>

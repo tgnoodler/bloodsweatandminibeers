@@ -636,4 +636,4 @@ document.addEventListener('click',function(e){var x=e.composedPath?e.composedPat
 document.addEventListener('change',function(e){var s=e.target;if(s.dataset&&s.dataset.a&&s.value){location.hash='vs-'+s.dataset.a+'-vs-'+s.value;return}
   if(s.id=='va'||s.id=='vb'){var a=$('#va').value,b=$('#vb').value;if(a&&b&&a!=b)location.hash='vs-'+a+'-vs-'+b}});
 })();
-</script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script></body></html>

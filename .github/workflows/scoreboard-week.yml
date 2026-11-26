@@ -1,6 +1,7 @@
-# Keeps a Scoreboard on the right week. If sunday.html is still built for last week when this
-# week's first game is about to kick off, this builds scoreboard.html for the new week from Sleeper and rolls the
-# home page. Otherwise scoreboard.html forwards to sunday.html. Runs on its own; "Run workflow" forces a check.
+# Builds the cloud Scoreboard page (scoreboard.html) and keeps the home page's scoreboard on the right week.
+# It moves both to the new week 12 hours before its first kickoff, refreshes them when rosters or kickoff times
+# change, and keeps every Scoreboard link pointed at the live page. See scoreboard/build.py.
+# Runs on its own; "Run workflow" on the Actions tab forces a check.
 name: Scoreboard week
 on:
   schedule:
@@ -9,17 +10,19 @@ on:
 permissions:
   contents: write
 concurrency: scoreboard-week
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
 jobs:
-  roll:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scoreboard/roll.py
+      - run: python3 -u scoreboard/build.py
       - run: |
-          if [ -n "$(git status --porcelain -- '*.html')" ]; then
+          if [ -n "$(git status --porcelain)" ]; then
             git config user.name "scoreboard"
             git config user.email "scoreboard@users.noreply.github.com"
-            git add -- '*.html'
-            git commit -m "Scoreboard week roll"
-            for i in 1 2 3; do git pull --rebase -q && git push && break; sleep 5; done
+            git add -A
+            git commit -q -m "Scoreboard week roll"
+            for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push -q origin HEAD:main && break; sleep 5; done
           fi

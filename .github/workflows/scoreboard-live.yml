@@ -1,0 +1,29 @@
+# Writes the Scoreboard's Rundown while games are on: touchdowns, starters at zero, Ices, lead changes.
+# Every ten minutes this checks the schedule. With nothing on it makes one pass and stops. With a game on or about
+# to start it stays up for the whole window, reading Sleeper every 20 seconds and committing
+# scoreboard/wire.json and scoreboard/status.json as things happen. See scoreboard/live.py.
+name: Scoreboard live
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+    inputs:
+      takeover:
+        description: 'Set to 1 to start even if another run is still watching (used when one run hands over to the next)'
+        required: false
+        default: ''
+permissions:
+  contents: write
+  actions: write
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -u scoreboard/live.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAKEOVER: ${{ inputs.takeover }}

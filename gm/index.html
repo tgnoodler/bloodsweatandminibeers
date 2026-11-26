@@ -144,4 +144,4 @@ function sortable(t){ const hs = t.rows[0].cells; [].forEach.call(hs, (h, i) => 
 })();
 document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => show(b.dataset.t)));
 let t0 = 'week'; try { t0 = localStorage.getItem('gm:tab') || 'week'; } catch(e) {} show(t0);
-</script></body></html>
+</script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script></body></html>
