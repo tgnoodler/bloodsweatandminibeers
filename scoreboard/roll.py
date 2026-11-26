@@ -13,8 +13,9 @@ touches it. Instead it keeps scoreboard.html:
   - sunday.html is still on last week    -> scoreboard.html is a copy of it with
     within 12 hours of the first kickoff    this week's data rebuilt from Sleeper
 
-The home page is rolled the same way in place, and its Scoreboard links point
-at scoreboard.html. Pages built here are marked "cloud": true and are kept
+The home page is rolled the same way in place. Scoreboard links on every page
+except sunday.html and radar.html, which the regular build keeps rewriting,
+point at scoreboard.html. Pages built here are marked "cloud": true and are kept
 fresh when rosters or kickoff times change.
 
 Run from the repo root:  python3 scoreboard/roll.py [--force]
@@ -242,6 +243,24 @@ def main():
         out = guard_wire(out).replace('href="sunday.html"', 'href="scoreboard.html"')
     if out != idx:
         open('index.html', 'w').write(out)
+    repoint()
+
+
+def repoint():
+    """Send every Scoreboard link the regular build does not keep rewriting to scoreboard.html."""
+    import glob
+    skip = {'sunday.html', 'radar.html', 'scoreboard.html'}
+    n = 0
+    for f in glob.glob('**/*.html', recursive=True):
+        if f in skip:
+            continue
+        t = read(f)
+        u = t.replace('href="sunday.html"', 'href="scoreboard.html"').replace('href="../sunday.html"', 'href="../scoreboard.html"')
+        u = u.replace('url=sunday.html"', 'url=scoreboard.html"').replace('location.replace("sunday.html")', 'location.replace("scoreboard.html")')
+        if u != t:
+            open(f, 'w').write(u); n += 1
+    if n:
+        print('Scoreboard links repointed in', n, 'pages')
 
 
 def _pairs(ms):
