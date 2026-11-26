@@ -50,8 +50,8 @@ def another_copy_running():
         return False
     try:
         me = str(os.environ.get('GITHUB_RUN_ID'))
-        runs = api('GET', '/repos/%s/actions/workflows/%s/runs?status=in_progress&per_page=20' % (REPO, WORKFLOW)).get('workflow_runs') or []
-        return any(str(r.get('id')) != me for r in runs)
+        runs = api('GET', '/repos/%s/actions/workflows/%s/runs?per_page=20' % (REPO, WORKFLOW)).get('workflow_runs') or []
+        return any(str(r.get('id')) != me and r.get('status') in ('in_progress', 'queued', 'requested', 'waiting', 'pending') for r in runs)
     except Exception as e:
         print('could not check for another copy:', repr(e))
         return False
@@ -67,21 +67,40 @@ def hand_over():
         print('could not start a replacement:', repr(e))
 
 
+OWN = ['scoreboard', 'scoreboard.html', 'report.html', 'sw.js']     # written only by the cloud build
+
+
 def publish(paths, msg, push=True):
-    """Commit the given files if they changed and push, riding over the home computer's own pushes."""
+    """Commit the given paths if they changed and push, riding over the home computer's own pushes."""
     if not push or not sh('git', 'status', '--porcelain', '--', *paths).stdout.strip():
         return False
     sh('git', 'add', '--', *paths)
     sh('git', 'commit', '-q', '-m', msg)
     for i in range(5):
-        sh('git', 'pull', '--rebase', '-q', 'origin', 'main')
+        if sh('git', 'pull', '--rebase', '-q', 'origin', 'main').returncode:
+            # Someone else changed one of the same files. Ours are whole snapshots, so take theirs for everything
+            # and lay our own files back on top. Anything outside OWN is left exactly as it is upstream.
+            sh('git', 'rebase', '--abort')
+            mine = {}
+            for f in sh('git', 'ls-files', '--', *[x for x in OWN if os.path.exists(x)]).stdout.split():
+                try:
+                    mine[f] = open(f, 'rb').read()
+                except Exception:
+                    pass
+            sh('git', 'fetch', '-q', 'origin', 'main')
+            sh('git', 'reset', '-q', '--hard', 'origin/main')
+            for f, data in mine.items():
+                os.makedirs(os.path.dirname(f) or '.', exist_ok=True)
+                open(f, 'wb').write(data)
+            sh('git', 'add', '--', *[x for x in OWN if os.path.exists(x)])
+            sh('git', 'commit', '-q', '-m', msg)
         # Each push starts a site build, and a newer push cancels one still running. Give the last push, ours or the
         # home computer's, time to finish building before sending the next, or the site could stop updating.
         try:
             age = time.time() - int(sh('git', 'log', '-1', '--format=%ct', 'origin/main').stdout.strip() or 0)
             if 0 <= age < SETTLE:
                 time.sleep(SETTLE - age)
-                sh('git', 'pull', '--rebase', '-q', 'origin', 'main')
+                continue                        # look again before pushing: something may have landed while we waited
         except Exception:
             pass
         if sh('git', 'push', '-q', 'origin', 'HEAD:main').returncode == 0:
@@ -119,6 +138,7 @@ def main():
     injury = lambda pid: get('/v1/players/nfl/' + pid, tries=1)
     last_live = last_build = last_push = 0
     passes = 0
+    relay = False
     while True:
         now = now_ms()
         try:
@@ -164,11 +184,13 @@ def main():
         if once or not (live or soon or cooling):
             break
         if time.time() - started > MAX_RUN:
-            hand_over()
+            relay = True
             break
         time.sleep(20 if (live or cooling) else 60)
     write_json(HERE + 'state.json', E.s)            # leave the clock where the next copy can pick it up
     publish(['.'], 'Rundown', push)
+    if relay:                                       # only once everything is saved, so the next copy starts from it
+        hand_over()
     print('done after', passes, 'passes')
 
 
