@@ -23,6 +23,7 @@ Run from the repo root:  python3 scoreboard/roll.py [--force]
 import json, math, re, sys, time, urllib.request
 
 LEAD_MS = 12 * 3600 * 1000          # roll this long before the week's first kickoff
+BUILD = 2                           # bump to make the job rebuild pages it built earlier
 API = 'https://api.sleeper.app'
 
 
@@ -101,7 +102,7 @@ def build(H, week, ms, sc, sc_next, players_db, proj):
     H2 = dict(H)
     H2.update(week=week, games=games, players=players, pos=pos, kick=kick, heads=heads,
               hsl={k: v for k, v in (H.get('hsl') or {}).items() if k in players and v},
-              built=int(time.time() * 1000), cloud=True)
+              built=int(time.time() * 1000), cloud=True, cloudv=BUILD)
     if H['week'] != week:
         H2.update(wire=[], tds=0, iced=[])
     starts = [g['start_time'] for g in sc_next if g.get('start_time')]
@@ -154,6 +155,31 @@ def guard_wire(s):
     return s.replace(GUARD_AT, GUARD_AT + GUARD, 1)
 
 
+# The regular build writes the Rundown's touchdowns into wire.json. A page built here cannot rely on that feed,
+# so it reads touchdowns for the league's starters straight from Sleeper's weekly stats instead.
+TD_AT = "var due={m:0,s:0,w:0,t:0},busy={},pre=H.prefix||'';"
+TD_POLL = "if(n>=due.w&&!busy.w){busy.w=1;due.w=n+45000;get(pre+'wire.json',gotWire).then(function(){busy.w=0})}"
+TD_POLL2 = "if(n>=due.w&&!busy.w){busy.w=1;due.w=n+(live?60000:300000);tdFeed().then(function(){busy.w=0})}"
+TD_JS = """/*bsmb-td*/var TDK='bsmb:td:'+H.season+':'+H.week,TDM={},tdBoot=true;try{TDM=JSON.parse(localStorage.getItem(TDK)||'{}')||{}}catch(e){TDM={}}
+function tdFeed(){return get('https://api.sleeper.app/stats/nfl/'+H.season+'/'+H.week+'?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=DEF',function(j){
+ if(!j||!j.length||!ms)return;var by={},ev=[],now=Date.now(),boot=tdBoot,cnt={};tdBoot=false;j.forEach(function(x){by[x.player_id]=x});
+ var K=[['pass_td','Passing','throws a touchdown'],['rush_td','Rushing','runs for a touchdown'],['rec_td','Receiving','catches a touchdown'],['def_td','Return','scores a touchdown'],['def_st_td','Return','scores a touchdown'],['st_td','Return','scores a touchdown']];
+ ms.forEach(function(t){var o=H.owners[t.roster_id];(t.starters||[]).forEach(function(pid){var x=by[pid];if(!x||!x.stats||!o)return;var p=H.players[pid]||{n:pid,t:x.team},g=sc[p.t];
+  K.forEach(function(k){var n=Math.round(+x.stats[k[0]]||0);for(var i=1;i<=n;i++){var key=pid+':'+k[0]+':'+i,m=TDM[key];
+   if(!m)m=TDM[key]=boot?{t:Math.min(now,+x.updated_at||now)+i}:{t:now+i,sc:g&&g.score||'',g:g&&g.st===1?g.lab:''};
+   ev.push({t:m.t,kind:'td',owner:o,id:pid,p:p.n,d:k[1],text:p.n+' '+k[2]+' for '+o+'.',sc:m.sc||'',g:m.g||''})}})})});
+ try{localStorage.setItem(TDK,JSON.stringify(TDM))}catch(e){}
+ ev.sort(function(a,b){return a.t-b.t});ev.forEach(function(e){cnt[e.owner]=(cnt[e.owner]||0)+1;e.n=cnt[e.owner]});ev.reverse();
+ if(ev.length)gotWire({ev:ev,tds:ev.length});else{canFire=true;lastW=Date.now()}})}
+"""
+
+
+def td_feed(s):
+    if '/*bsmb-td*/' in s or TD_AT not in s or TD_POLL not in s:
+        return s
+    return s.replace(TD_POLL, TD_POLL2, 1).replace(TD_AT, TD_JS + TD_AT, 1)
+
+
 def render(s, H, week, data):
     """Return the page `s` with its week data rebuilt for `week`."""
     ms, sc, sc_next, players_db, proj = data
@@ -172,7 +198,7 @@ def render(s, H, week, data):
     for old in range(H['week'], week):
         s = s.replace('Scoreboard, Week %d' % old, 'Scoreboard, Week %d' % week)
         s = s.replace('<b class="ttl">Scoreboard</b><em>Week %d</em>' % old, '<b class="ttl">Scoreboard</b><em>Week %d</em>' % week)
-    return guard_wire(s), H2
+    return td_feed(guard_wire(s)), H2
 
 
 def read(path):
@@ -203,7 +229,8 @@ def main():
     ms = get('/v1/league/%s/matchups/%d' % (Hs['league'], week))
     ids = {p for t in ms for p in (t.get('players') or [])}
     kick = {tm: g['start_time'] for g in sc for tm in ((g.get('metadata') or {}).get('home_team'), (g.get('metadata') or {}).get('away_team')) if tm}
-    fresh = lambda H: H and H.get('week') == week and ids == set(H.get('players') or {}) and kick == (H.get('kick') or {})
+    fresh = lambda H: (H and H.get('week') == week and H.get('cloudv') == BUILD
+                       and ids == set(H.get('players') or {}) and kick == (H.get('kick') or {}))
     n_games = len([1 for v in _pairs(ms).values() if len(v) == 2])
     cards_ok = lambda s: len(re.findall(r'<article class="fgt" data-i="\d+"', s)) in (0, n_games)
 
