@@ -18,9 +18,10 @@ Run from the repo root:  python3 scoreboard/build.py [--force]
 import glob, json, math, os, re, sys, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from sleeper import get, now_ms, phi, read_json, write_json, SD
+import report as weekly
 
 LEAD_MS = 12 * 3600 * 1000      # move to the new week this long before its first kickoff
-BUILD = 3                       # bump to make the job rebuild pages it built earlier
+BUILD = 4                       # bump to make the job rebuild pages it built earlier
 HERE = 'scoreboard/'
 PROJ = '/projections/nfl/%s/%d?season_type=regular&position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF'
 SW_TAG = "<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}</script>"
@@ -147,6 +148,7 @@ def wire_up(s):
     s = s.replace("get(pre+'radar_status.json',function(j){if(j){H.rs=j;paint()}})",
                   "get(pre+'scoreboard/status.json',function(j){if(j){H.rs=j;paint()}})")
     s = s.replace("fetch('recap/latest.json'", "fetch('scoreboard/latest.json'")
+    s = s.replace('href="recap.html"', 'href="report.html"')
     if '/sw.js' not in s and '</body>' in s:
         s = s.replace('</body>', SW_TAG + '</body>', 1)
     return s
@@ -171,14 +173,15 @@ def render(s, H, week, data, status):
 
 def repoint():
     """Send Scoreboard links to scoreboard.html and register the redirect, on every page the regular build leaves alone."""
-    skip = {'sunday.html', 'radar.html', 'scoreboard.html'}
+    skip = {'sunday.html', 'radar.html', 'scoreboard.html', 'recap.html', 'report.html'}
     n = 0
     for f in glob.glob('**/*.html', recursive=True):
-        if f in skip:
+        if f in skip or f.startswith('recap/wk'):      # the report cards are pictures' sources, not pages
             continue
         t = read(f)
         u = t.replace('href="sunday.html"', 'href="scoreboard.html"').replace('href="../sunday.html"', 'href="../scoreboard.html"')
         u = u.replace('url=sunday.html"', 'url=scoreboard.html"').replace('location.replace("sunday.html")', 'location.replace("scoreboard.html")')
+        u = u.replace('href="recap.html"', 'href="report.html"').replace('href="../recap.html"', 'href="../report.html"')
         if '/sw.js' not in u and '</body>' in u:
             u = u.replace('</body>', SW_TAG + '</body>', 1)
         if u != t:
@@ -255,6 +258,10 @@ def main(force=False):
     idx2 = read('index.html')
     if gi and wire_up(idx2) != idx2:
         open('index.html', 'w').write(wire_up(idx2))
+    try:
+        weekly.main()                               # the Weekly Report card and page
+    except Exception as e:
+        print('weekly report skipped:', repr(e))
     report(target, season, sc)
     repoint()
 

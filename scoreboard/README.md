@@ -15,7 +15,9 @@ those two files on every run, so they cannot be fixed in place from here.
 | `scoreboard/status.json` | Ice count and warnings for the page's top bar | `live.py` |
 | `scoreboard/state.json` | The engine's memory between runs | `live.py` |
 | `scoreboard/latest.json` | Whether the weekly report picture is ready | `build.py` |
-| `/sw.js` | Sends `/sunday.html` visitors to `/scoreboard.html` | by hand |
+| `/report.html` | The Weekly Report page, on the newest card | `report.py` |
+| `recap/wkN.html`, `.png` | The week's report card, if the home build has not drawn it five hours after the last kickoff | `report.py` |
+| `/sw.js` | Sends `/sunday.html` visitors to `/scoreboard.html`, and `/recap.html` to `/report.html` | by hand |
 
 ## How it runs
 
@@ -25,6 +27,8 @@ those two files on every run, so they cannot be fixed in place from here.
 - **Scoreboard live** (`.github/workflows/scoreboard-live.yml`, every ten minutes) runs `live.py`. With a game on or
   within 75 minutes it stays up for the whole window, reading Sleeper every 20 seconds and committing the Rundown as
   things happen. Otherwise it makes one pass, to catch stat corrections, and stops.
+
+`report.py` is called by `build.py`; it needs Chrome, which GitHub's runners have, to take the card's picture.
 
 `engine.py` holds the rules and makes no network calls. `test_engine.py` replays a made-up game day through it:
 `python3 scoreboard/test_engine.py`.
