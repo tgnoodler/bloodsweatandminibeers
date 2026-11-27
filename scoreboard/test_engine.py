@@ -128,3 +128,20 @@ assert not again, again
 f = E.feed()
 assert f['tds'] == sum(1 for e in f['ev'] if e['kind'] == 'td') == 8 and f['ev'][0]['t'] >= f['ev'][-1]['t']
 print('\nall checks passed:', len(log), 'entries written,', f['tds'], 'touchdowns,', len(f['iced']), 'Iced')
+
+# ---- the live runner's decision to stay up or stop ----
+import live
+H, M = 3600000, 60000
+g = lambda st, kick: {'st': st, 'kick': kick}
+now = K
+assert live.plan(now, [g(1, now - H)], [], 0)[:2] == (True, 20)                             # a game is on
+assert live.plan(now, [g(2, now - 4 * H)], [], now - 5 * M)[:2] == (True, 20)               # one just ended: stay for the Ice calls
+# Thanksgiving, 3:45 PM: one game over, the next is 15 minutes past its kickoff time and Sleeper still says not started
+assert live.plan(now, [g(2, now - 4 * H), g(0, now - 15 * M)], [], now - 13 * M)[:2] == (True, 20)
+assert live.plan(now, [g(0, now + 5 * M)], [], 0)[:2] == (True, 20)                         # about to kick off
+assert live.plan(now, [g(0, now + 40 * M)], [], 0)[:2] == (True, 60)
+assert live.plan(now, [g(0, now + 9 * H)], [], 0)[:2] == (True, 300)                        # hours out: nap, but keep the watch
+assert live.plan(now, [g(2, now - 30 * H)], [now + 10 * H], 0)[:2] == (True, 300)           # last week is over, next week kicks off tonight
+assert live.plan(now, [g(0, now + 40 * H)], [], 0)[0] is False                              # nothing within reach: stop
+assert live.plan(now, [g(2, now - 30 * H)], [now + 60 * H], 0)[0] is False
+print('runner checks passed')

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Runs the Rundown engine live.
 
-Started every ten minutes by .github/workflows/scoreboard-live.yml. If no game is on or about to start it makes one
-pass, to catch stat corrections, and stops. Otherwise it stays up for the whole window: every 20 seconds it reads the
-NFL scores, the league's lineups and Sleeper's player stats, hands them to the engine, and commits the Rundown
+Started by .github/workflows/scoreboard-live.yml: on a schedule, by the Scoreboard week job, and whenever the home
+computer pushes a build. GitHub starts scheduled runs hours late, so a run that finds a kickoff within 16 hours
+stays up and carries the watch itself: it naps until game time, then every 20 seconds reads the NFL scores, the
+league's lineups and Sleeper's player stats, hands them to the engine, and commits the Rundown
 (scoreboard/wire.json), the Ice status (scoreboard/status.json) and its own memory (scoreboard/state.json) whenever
-they change. Only one copy runs at a time; near GitHub's six-hour limit it starts its own replacement and steps aside.
+they change. Near GitHub's six-hour limit it starts its own replacement, checks that it came up, and steps aside.
+Only the oldest run keeps the watch; any other steps aside. With nothing within 16 hours it makes one pass and stops.
 
 Run from the repo root:  python3 scoreboard/live.py [--once] [--no-push]
 """
@@ -17,8 +19,11 @@ from sleeper import game_states, get, now_ms, read_json, write_json
 
 HERE = 'scoreboard/'
 FILES = [HERE + 'wire.json', HERE + 'status.json', HERE + 'state.json']
-MAX_RUN = int(os.environ.get('LIVE_MAX_SECONDS', 5 * 3600 + 15 * 60))
-SOON_MS = 75 * 60 * 1000        # stay up if a game kicks off within this long
+MAX_RUN = int(os.environ.get('LIVE_MAX_SECONDS') or 5 * 3600 + 15 * 60)
+ALIVE_MS = 16 * 3600 * 1000     # stay up if a game kicks off within this long. GitHub starts scheduled runs hours late,
+                                # so a run that is up has to carry the watch itself rather than count on the next one
+OVERDUE_MS = 6 * 3600 * 1000    # and while a game is past its kickoff time but Sleeper has not marked it started
+BUILD_EVERY_MS = 30 * 60 * 1000 # how often to check the page and the week's data while up
 COOL_MS = 12 * 60 * 1000        # and this long after the last one ends, for the Ice calls
 SETTLE = 40                     # seconds a push is given to finish building on the site before the next one
 PUSH_EVERY_MS = 60 * 1000       # and the least time between our own pushes
@@ -45,27 +50,58 @@ def api(method, path, body=None):
         return json.loads(raw) if raw else {}
 
 
-def another_copy_running():
-    """True if a different run of this workflow is already watching the games."""
-    if not (REPO and TOKEN) or os.environ.get('TAKEOVER') == '1':
+def active_runs():
+    """Every run of this workflow that is running or about to."""
+    runs = []
+    for st in ('in_progress', 'queued'):
+        runs += api('GET', '/repos/%s/actions/workflows/%s/runs?status=%s&per_page=50' % (REPO, WORKFLOW, st)).get('workflow_runs') or []
+    return runs
+
+
+def older_copy_running():
+    """True if a run that started before this one is still going. The oldest one keeps the watch."""
+    if not (REPO and TOKEN and os.environ.get('GITHUB_RUN_ID')):
         return False
     try:
-        me = str(os.environ.get('GITHUB_RUN_ID'))
-        runs = api('GET', '/repos/%s/actions/workflows/%s/runs?per_page=20' % (REPO, WORKFLOW)).get('workflow_runs') or []
-        return any(str(r.get('id')) != me and r.get('status') in ('in_progress', 'queued', 'requested', 'waiting', 'pending') for r in runs)
+        me = int(os.environ['GITHUB_RUN_ID'])
+        return any(int(r.get('id') or 0) < me for r in active_runs())
     except Exception as e:
         print('could not check for another copy:', repr(e))
         return False
 
 
 def hand_over():
+    """Start the next copy and make sure it really started. GitHub's own schedule cannot be trusted to do it in time."""
     if not (REPO and TOKEN):
         return
-    try:
-        api('POST', '/repos/%s/actions/workflows/%s/dispatches' % (REPO, WORKFLOW), {'ref': 'main', 'inputs': {'takeover': '1'}})
-        print('started a replacement run')
-    except Exception as e:
-        print('could not start a replacement:', repr(e))
+    me = int(os.environ.get('GITHUB_RUN_ID') or 0)
+    for attempt in range(4):
+        try:
+            api('POST', '/repos/%s/actions/workflows/%s/dispatches' % (REPO, WORKFLOW), {'ref': 'main', 'inputs': {'takeover': '1'}})
+            for _ in range(8):
+                time.sleep(6)
+                if any(int(r.get('id') or 0) > me for r in active_runs()):
+                    print('handed over to a new run'); return
+        except Exception as e:
+            print('handover attempt', attempt + 1, 'failed:', repr(e))
+        time.sleep(5)
+    print('could not hand over; the next scheduled or push-triggered run will pick the watch up')
+
+
+def plan(now, games, ahead, last_live):
+    """Should this run stay up, and how long until the next look? Returns (stay, seconds, why)."""
+    if any(g['st'] == 1 for g in games):
+        return True, 20, 'a game is on'
+    if last_live and now - last_live <= COOL_MS:
+        return True, 20, 'a game just ended'
+    kicks = [g['kick'] for g in games if g['st'] == 0] + list(ahead or [])
+    if any(0 <= now - k <= OVERDUE_MS for k in kicks):
+        return True, 20, 'kickoff time has passed and the game has not shown as started yet'
+    ahead_ms = [k - now for k in kicks if k > now]
+    if not ahead_ms or min(ahead_ms) > ALIVE_MS:
+        return False, 0, 'no kickoff within %d hours' % (ALIVE_MS // 3600000)
+    nxt = min(ahead_ms)
+    return True, (20 if nxt <= 10 * 60000 else 60 if nxt <= 75 * 60000 else 300), 'next kickoff in %d minutes' % (nxt // 60000)
 
 
 OWN = ['scoreboard', 'scoreboard.html', 'report.html', 'sw.js']     # written only by the cloud build
@@ -118,49 +154,51 @@ def strip(d, *keys):
 def main():
     once, push = '--once' in sys.argv, '--no-push' not in sys.argv
     started = time.time()
+    takeover = os.environ.get('TAKEOVER') == '1'
     if push:
         sh('git', 'config', 'user.name', 'scoreboard')
         sh('git', 'config', 'user.email', 'scoreboard@users.noreply.github.com')
-    state = get('/v1/state/nfl')
-    if state.get('season_type') != 'regular':
-        print('not the regular season'); return
-    season, week = state['season'], int(state['week'])
-    if another_copy_running():
-        print('another copy is already watching; nothing to do'); return
-    build.main()                                    # make sure the page and week data are on the right week
-    W = read_json(HERE + 'week.json') or {}
-    if not W.get('week'):
-        print('no week data yet'); return
-    if W['week'] != week:                           # between weeks the page is still on last week: one pass for corrections
-        print('page is on week', W['week'], 'until week', week, 'is close')
-        week = W['week']
-    E = Engine(week, W, read_json(HERE + 'state.json'), read_json(HERE + 'wire.json'))
-    publish(['.'], 'Scoreboard week roll', push)
+    if not takeover and older_copy_running():
+        print('an older run is already watching; nothing to do'); return
     injury = lambda pid: get('/v1/players/nfl/' + pid, tries=1)
-    last_live = last_build = 0
+    E, W, season, ahead = None, {}, None, []
+    last_live = last_build = last_guard = 0
     last_push = now_ms()
-    passes = 0
-    relay = False
+    passes, relay, why = 0, False, 'starting'
     while True:
         now = now_ms()
+        stay, nap = True, 60
         try:
+            if now - last_build >= BUILD_EVERY_MS:      # the page, the week's data, and which week we are watching
+                last_build = now
+                build.main()
+                W2 = read_json(HERE + 'week.json') or {}
+                if W2.get('week') and (E is None or W2['week'] != E.week):
+                    W, season = W2, W2['season']
+                    E = Engine(W['week'], W, read_json(HERE + 'state.json'), read_json(HERE + 'wire.json'))
+                    print('watching week', E.week)
+                elif E is not None and W2.get('week') == E.week:
+                    W = W2
+                    E.W = W
+                ahead = []
+                cur = get('/v1/state/nfl')
+                if E is not None and cur.get('season_type') == 'regular' and int(cur['week']) != E.week:
+                    ahead = [g['start_time'] for g in get('/scores/nfl/regular/%s/%d' % (cur['season'], int(cur['week']))) if g.get('start_time')]
+                publish(['.'], 'Scoreboard week roll', push)
+            if E is None:
+                print('no week data yet'); break
+            week = E.week
             sc = get('/scores/nfl/regular/%s/%d' % (season, week))
             G = game_states(sc)
             games = list({g['k']: g for g in G.values()}.values())
             live = any(g['st'] == 1 for g in games)
-            soon = any(g['st'] == 0 and 0 <= g['kick'] - now <= SOON_MS for g in games)
-            under_way = bool(games) and now >= min(g['kick'] for g in games)
             if live:
                 last_live = now
-            waiting = soon and not live and not any(g['st'] == 0 and g['kick'] - now <= 3 * 60 * 1000 for g in games)
-            if under_way and not (waiting and passes):
+            if games and now >= min(g['kick'] for g in games):
                 ms = get('/v1/league/%s/matchups/%d' % (W['league'], week))
                 known = set(W.get('players') or {})
                 if any(p not in known for t in ms for p in (t.get('players') or [])) and now - last_build > 10 * 60 * 1000:
-                    last_build = now                # someone was picked up: refresh names, teams and projections
-                    build.main()
-                    W = read_json(HERE + 'week.json') or W
-                    E.W = W
+                    last_build = 0                  # someone was picked up: refresh names, teams and projections next pass
                 stats = get(STATS % (season, week))
                 keep = copy.deepcopy((E.s, E.ev))
                 try:
@@ -184,21 +222,28 @@ def main():
                     print(time.strftime('%H:%M:%S'), 'still watching:', sum(1 for g in games if g['st'] == 1), 'live,', len(E.ev), 'entries')
                 if now - last_push >= PUSH_EVERY_MS and publish(['.'], 'Rundown', push):
                     last_push = now_ms()
+            stay, nap, now_why = plan(now, games, ahead, last_live)
+            if now_why != why:
+                why = now_why
+                print(time.strftime('%H:%M:%S'), why)
         except Exception as e:                      # one bad pass must not end the watch
             print('pass skipped:', repr(e))
-            live = soon = True
-        cooling = last_live and now - last_live <= COOL_MS
-        if once or not (live or soon or cooling):
+        if once or not stay:
             break
         if time.time() - started > MAX_RUN:
             relay = True
             break
-        time.sleep(20 if (live or cooling) else 60)
-    write_json(HERE + 'state.json', E.s)            # leave the clock where the next copy can pick it up
-    publish(['.'], 'Rundown', push)
+        if now - last_guard >= 5 * 60 * 1000 and (not takeover or time.time() - started > 180):
+            last_guard = now
+            if older_copy_running():
+                print('an older run is watching; stepping aside'); break
+        time.sleep(nap)
+    if E is not None:
+        write_json(HERE + 'state.json', E.s)        # leave the clock where the next copy can pick it up
+        publish(['.'], 'Rundown', push)
     if relay:                                       # only once everything is saved, so the next copy starts from it
         hand_over()
-    print('done after', passes, 'passes')
+    print('done after', passes, 'passes:', why)
 
 
 if __name__ == '__main__':

@@ -1,15 +1,24 @@
 # Writes the Scoreboard's Rundown while games are on: touchdowns, starters at zero, Ices, lead changes.
-# Every ten minutes this checks the schedule. With nothing on it makes one pass and stops. With a game on or about
-# to start it stays up for the whole window, reading Sleeper every 20 seconds and committing
-# scoreboard/wire.json and scoreboard/status.json as things happen. See scoreboard/live.py.
+# GitHub starts scheduled runs hours late, so this does not rely on the schedule alone. A run that finds a kickoff
+# within 16 hours stays up, watches the games, and starts its own replacement before GitHub's six-hour limit.
+# It is started three ways: on the schedule below, by the Scoreboard week job, and whenever the home computer
+# pushes a build. Only the oldest run keeps the watch; any other steps aside in a few seconds.
+# See scoreboard/live.py.
 name: Scoreboard live
 on:
   schedule:
     - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+    paths: ['radar_status.json']
   workflow_dispatch:
     inputs:
       takeover:
-        description: 'Set to 1 to start even if another run is still watching (used when one run hands over to the next)'
+        description: 'Set to 1 when one run hands over to the next'
+        required: false
+        default: ''
+      max_seconds:
+        description: 'For testing: hand over after this many seconds instead of 5 hours 15 minutes'
         required: false
         default: ''
 permissions:
@@ -27,3 +36,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TAKEOVER: ${{ inputs.takeover }}
+          LIVE_MAX_SECONDS: ${{ inputs.max_seconds }}

@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 concurrency: scoreboard-week
 env:
   PYTHONDONTWRITEBYTECODE: '1'
@@ -26,3 +27,9 @@ jobs:
             git commit -q -m "Scoreboard week roll"
             for i in 1 2 3 4 5; do git pull --rebase -q origin main && git push -q origin HEAD:main && break; sleep 5; done
           fi
+      # GitHub's schedule is slow to start things, so every job that does run also makes sure the live watch is up.
+      - run: |
+          curl -s -o /dev/null -X POST -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/scoreboard-live.yml/dispatches" -d '{"ref":"main"}' || true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

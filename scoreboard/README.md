@@ -24,9 +24,12 @@ those two files on every run, so they cannot be fixed in place from here.
 - **Scoreboard week** (`.github/workflows/scoreboard-week.yml`, twice an hour) runs `build.py`. It moves the page to
   the new week 12 hours before the first kickoff, refreshes it when rosters or kickoff times change, and keeps every
   Scoreboard link on the site pointed at `scoreboard.html`.
-- **Scoreboard live** (`.github/workflows/scoreboard-live.yml`, every ten minutes) runs `live.py`. With a game on or
-  within 75 minutes it stays up for the whole window, reading Sleeper every 20 seconds and committing the Rundown as
-  things happen. Otherwise it makes one pass, to catch stat corrections, and stops.
+- **Scoreboard live** (`.github/workflows/scoreboard-live.yml`) runs `live.py`. GitHub starts scheduled runs hours
+  late (in this repo, about one run every six to ten hours whatever the schedule says), so the live watch does not
+  depend on the schedule. A run that finds a kickoff within 16 hours stays up: it naps until game time, reads Sleeper
+  every 20 seconds while games are on, commits the Rundown as things happen, and before GitHub's six-hour limit
+  starts its own replacement and checks that it came up. It is started three ways: the schedule, the Scoreboard
+  week job, and every push of a build from the home computer. Only the oldest run keeps the watch.
 
 `report.py` is called by `build.py`; it needs Chrome, which GitHub's runners have, to take the card's picture.
 

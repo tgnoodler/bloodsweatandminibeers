@@ -7,6 +7,7 @@ self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim(
 self.addEventListener('fetch', function (e) {
   var u = new URL(e.request.url);
   if (e.request.mode !== 'navigate' || u.origin !== self.location.origin) return;
+  if (u.searchParams.has('computer')) return;      // /sunday.html?computer shows the home computer's own page
   if (u.pathname === '/sunday.html') e.respondWith(Response.redirect('/scoreboard.html', 302));
   else if (u.pathname === '/recap.html') e.respondWith(Response.redirect('/report.html', 302));
 });
